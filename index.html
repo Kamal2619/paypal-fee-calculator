@@ -3,323 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PayPal Fee Conversion Calculator - USD to INR | HostingTools</title>
-    <meta name="description" content="Calculate exact PayPal fees for USD to INR transactions. See the complete breakdown including PayPal fee, GST, FX markup, and bank withdrawal charges.">
+    <title>PayPal Fee Calculator — USD to INR (Personal Tool)</title>
+    <meta name="description" content="Personal PayPal fee and invoice calculator for USD to INR transactions. See exact deductions including PayPal fee, GST, and currency markup.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Top Banner -->
-    <div class="top-banner">
-        <div class="container">
-            <p><i class="fas fa-bolt"></i> Grab Domains starting at <strong>₹49/yr</strong> — Limited Time! <a href="#">Claim Now <i class="fas fa-arrow-right"></i></a></p>
-        </div>
-    </div>
-
-    <!-- Header -->
-    <header class="main-header">
-        <div class="container header-inner">
-            <div class="logo">
-                <span class="logo-icon"><i class="fas fa-server"></i></span>
-                <span class="logo-text">Hosting<span class="logo-highlight">Tools</span></span>
-            </div>
-            <div class="header-right">
-                <div class="support-block">
-                    <i class="fas fa-headset support-icon"></i>
-                    <div class="support-info">
-                        <span class="support-label">Ticket Support</span>
-                        <span class="support-time">Mon - Sat | 10AM - 7PM IST</span>
-                    </div>
+    <!-- Minimal Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-badge"><i class="fab fa-paypal"></i></div>
+                <div class="brand-text">
+                    <h1>PayCalc <span class="tag">USD ⇄ INR</span></h1>
+                    <span class="subtag">Personal Fee & Invoice Tool</span>
                 </div>
-                <!-- Theme Toggle -->
-                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
-                    <i class="fas fa-moon" id="themeIcon"></i>
+            </div>
+            <div class="header-actions">
+                <div class="rate-badge" id="rateBadge" title="Click to adjust exchange rate" onclick="toggleRateSettings()">
+                    <i class="fas fa-chart-line"></i>
+                    <span id="headerRateText">1 USD = ₹--.--</span>
+                    <button class="icon-btn-small" onclick="event.stopPropagation(); fetchExchangeRate();" title="Refresh live rate">
+                        <i class="fas fa-sync-alt" id="syncIcon"></i>
+                    </button>
+                </div>
+                <!-- Dark / Light Theme Toggle -->
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark/light mode">
+                    <span class="theme-toggle-track">
+                        <i class="fas fa-sun sun-icon"></i>
+                        <i class="fas fa-moon moon-icon"></i>
+                        <span class="theme-toggle-thumb"></span>
+                    </span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Navigation -->
-    <nav class="main-nav">
-        <div class="container nav-inner">
-            <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle navigation">
-                <span></span><span></span><span></span>
-            </button>
-            <ul class="nav-links" id="navLinks">
-                <li><a href="#" class="active">HOME</a></li>
-                <li><a href="#">DOMAIN <i class="fas fa-caret-down"></i></a></li>
-                <li><a href="#">HOSTING</a></li>
-                <li><a href="#">RESELLER <span class="nav-badge badge-new">New</span></a></li>
-                <li><a href="#">EMAIL <span class="nav-badge badge-offer">Offer</span></a></li>
-                <li><a href="#">TOOLS <span class="nav-badge badge-free">Free</span></a></li>
-                <li class="nav-login"><a href="#" class="btn-login"><i class="fas fa-user"></i> ACCOUNT LOGIN</a></li>
-            </ul>
-        </div>
-    </nav>
+    <!-- Main Content Container -->
+    <main class="main-wrapper">
+        <div class="calculator-box">
 
-    <!-- Calculator Section -->
-    <section class="calculator-section">
-        <div class="container">
-            <div class="calculator-card">
-                <div class="calculator-header">
-                    <h1>
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" class="paypal-logo" onerror="this.style.display='none'">
-                        PayPal Fee Conversion Calculator
-                        <span class="usd-inr-badge">USD to INR</span>
-                    </h1>
-                    <p class="calc-subtitle">Calculate how much INR you'll receive — or how much USD to invoice your client.</p>
+            <!-- Mode Selector Tabs -->
+            <div class="tab-switch" role="tablist">
+                <button class="tab-btn active" id="tabForward" onclick="switchMode('forward')" role="tab">
+                    <i class="fas fa-arrow-down-left"></i>
+                    <span>I Receive USD</span>
+                    <small>How much ₹ reaches my bank?</small>
+                </button>
+                <button class="tab-btn" id="tabReverse" onclick="switchMode('reverse')" role="tab">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Invoice Client</span>
+                    <small>How much $ should I bill?</small>
+                </button>
+            </div>
+
+            <!-- Rate Adjustment Bar (Collapsible) -->
+            <div class="rate-settings-panel" id="rateSettingsPanel">
+                <div class="rate-settings-header">
+                    <span><i class="fas fa-sliders-h"></i> Exchange Rate & Margin Settings</span>
+                    <button class="close-panel-btn" onclick="toggleRateSettings()">&times;</button>
                 </div>
-
-                <div class="calculator-body">
-                    <!-- Mode Toggle -->
-                    <div class="mode-toggle">
-                        <button class="mode-btn active" id="modeForward" onclick="switchMode('forward')">
-                            <i class="fas fa-arrow-right"></i>
-                            <div>
-                                <span class="mode-label">I received USD</span>
-                                <span class="mode-desc">How much INR will I get?</span>
-                            </div>
-                        </button>
-                        <button class="mode-btn" id="modeReverse" onclick="switchMode('reverse')">
-                            <i class="fas fa-arrow-left"></i>
-                            <div>
-                                <span class="mode-label">I need ₹ INR</span>
-                                <span class="mode-desc">How much USD should I ask?</span>
-                            </div>
-                        </button>
-                    </div>
-
-                    <!-- Input -->
-                    <div class="input-group">
-                        <div class="input-wrapper">
-                            <label for="amountInput" id="inputLabel">Enter amount (in $):</label>
-                            <div class="input-field-wrap">
-                                <span class="input-prefix" id="inputPrefix">$</span>
-                                <input type="number" id="amountInput" placeholder="e.g. 100" min="0" step="0.01">
-                            </div>
+                <div class="rate-settings-grid">
+                    <div class="setting-item">
+                        <label for="customBaseRate">Market Rate (USD/INR):</label>
+                        <div class="input-with-affix">
+                            <span>₹</span>
+                            <input type="number" id="customBaseRate" step="0.01" value="86.20" onchange="updateCustomRate()">
                         </div>
-                        <button class="btn-calculate" onclick="calculateFee()">
-                            <i class="fas fa-calculator"></i> Calculate Fee
+                    </div>
+                    <div class="setting-item">
+                        <label for="customFxMarkup">PayPal Spread / Margin:</label>
+                        <div class="input-with-affix">
+                            <input type="number" id="customFxMarkup" step="0.1" value="3.8" onchange="updateCustomRate()">
+                            <span>%</span>
+                        </div>
+                    </div>
+                    <div class="setting-item full-width">
+                        <span class="rate-preview-text">Effective PayPal Conversion Rate: <strong id="previewEffectiveRate">₹82.92</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculator Form Body -->
+            <div class="calculator-content">
+
+                <!-- Amount Input Area -->
+                <div class="input-container">
+                    <div class="input-label-row">
+                        <label for="amountInput" id="inputLabel">Amount Sent by Client:</label>
+                        <span class="input-hint" id="inputHint">Client pays in USD</span>
+                    </div>
+                    <div class="input-input-row">
+                        <div class="currency-symbol" id="inputPrefix">$</div>
+                        <input type="number" id="amountInput" placeholder="100" min="0" step="any" autofocus autocomplete="off">
+                        <button class="clear-btn" id="clearBtn" onclick="clearInput()" title="Clear">
+                            <i class="fas fa-times"></i>
                         </button>
                     </div>
+                </div>
 
-                    <div class="exchange-rate-info" id="exchangeRateInfo">
-                        <i class="fas fa-sync-alt"></i> <span id="rateStatusText">Fetching live exchange rate...</span>
-                    </div>
-
-                    <!-- Forward Results -->
-                    <div class="results-section" id="resultsSection">
-                        <div class="results-header">
-                            <h3><i class="fas fa-receipt"></i> Fee Breakdown</h3>
-                            <span class="results-timestamp" id="resultsTimestamp"></span>
-                        </div>
-                        <div class="results-grid">
-                            <div class="result-row"><span>Amount Sent</span><span class="val positive" id="resAmountSent"></span></div>
-                            <div class="result-row ded"><span>PayPal Fee (4.4% + $0.30)</span><span class="val negative" id="resPaypalFee"></span></div>
-                            <div class="result-row ded"><span>GST (18% on fee)</span><span class="val negative" id="resGST"></span></div>
-                            <div class="result-row sub"><span>Net Amount in USD</span><span class="val" id="resNetUSD"></span></div>
-                            <div class="result-divider"></div>
-                            <div class="result-row"><span>Google/Market Rate</span><span class="val" id="resBaseRate"></span></div>
-                            <div class="result-row ded"><span>PayPal FX Markup (3.8%)</span><span class="val negative" id="resFxMarkup"></span></div>
-                            <div class="result-row"><span>Effective Exchange Rate</span><span class="val" id="resEffectiveRate"></span></div>
-                            <div class="result-divider"></div>
-                            <div class="result-row total"><span><i class="fas fa-wallet"></i> You Receive</span><span class="val" id="resTotalINR"></span></div>
-                            <div class="result-row loss"><span>Total Loss</span><span class="val negative" id="resTotalLoss"></span></div>
-                        </div>
-                        <div class="results-note"><i class="fas fa-info-circle"></i> Rates are indicative. Actual amounts may vary based on PayPal's real-time rates.</div>
-                    </div>
-
-                    <!-- Reverse Results -->
-                    <div class="results-section" id="reverseResultsSection">
-                        <div class="results-header reverse-header">
-                            <h3><i class="fas fa-bullseye"></i> Invoice Calculator</h3>
-                            <span class="results-timestamp" id="reverseTimestamp"></span>
-                        </div>
-                        <div class="results-grid">
-                            <div class="result-row total reverse-total"><span><i class="fas fa-hand-holding-usd"></i> Ask Your Client to Send</span><span class="val" id="revRequiredUSD"></span></div>
-                            <div class="result-divider"></div>
-                            <div class="result-row"><span>Desired Amount in Bank</span><span class="val positive" id="revDesiredINR"></span></div>
-                            <div class="result-divider"></div>
-                            <p class="breakdown-label"><i class="fas fa-search-dollar"></i> Fee breakdown on that invoice:</p>
-                            <div class="result-row ded"><span>PayPal Fee (4.4% + $0.30)</span><span class="val negative" id="revPaypalFee"></span></div>
-                            <div class="result-row ded"><span>GST (18% on fee)</span><span class="val negative" id="revGST"></span></div>
-                            <div class="result-row sub"><span>Net USD After Deductions</span><span class="val" id="revNetUSD"></span></div>
-                            <div class="result-divider"></div>
-                            <div class="result-row"><span>Google/Market Rate</span><span class="val" id="revBaseRate"></span></div>
-                            <div class="result-row ded"><span>PayPal FX Markup (3.8%)</span><span class="val negative" id="revFxMarkup"></span></div>
-                            <div class="result-row"><span>Effective Exchange Rate</span><span class="val" id="revEffectiveRate"></span></div>
-                            <div class="result-divider"></div>
-                            <div class="result-row"><span>Total Hidden Charges</span><span class="val negative" id="revTotalCharges"></span></div>
-                            <div class="result-row loss"><span>Loss % of Invoice</span><span class="val negative" id="revLossPercent"></span></div>
-                        </div>
-                        <div class="results-note"><i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Share this breakdown with your client so they understand the higher invoice.</div>
+                <!-- Reverse Sub-mode Selector (Only shown in Reverse / Invoice Mode) -->
+                <div class="reverse-submode-container" id="reverseSubmode" style="display: none;">
+                    <span class="submode-label">My Target Goal:</span>
+                    <div class="submode-options">
+                        <label class="radio-chip">
+                            <input type="radio" name="targetType" value="inr" checked onchange="onTargetTypeChange()">
+                            <span><i class="fas fa-rupee-sign"></i> Exact ₹ in My Indian Bank</span>
+                        </label>
+                        <label class="radio-chip">
+                            <input type="radio" name="targetType" value="usd" onchange="onTargetTypeChange()">
+                            <span><i class="fas fa-dollar-sign"></i> Full $ Equivalent Value</span>
+                        </label>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- How It Works -->
-    <section class="section-alt" id="howItWorks">
-        <div class="container">
-            <h2 class="section-title">How PayPal Fees Work</h2>
-            <p class="section-subtitle">Understanding charges when receiving international payments in India</p>
-            <div class="steps-grid">
-                <div class="step-card">
-                    <div class="step-icon"><i class="fas fa-paper-plane"></i></div>
-                    <h3>Client Sends USD</h3>
-                    <p>Your US client sends the agreed amount in USD through PayPal.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-icon"><i class="fas fa-percentage"></i></div>
-                    <h3>PayPal Deducts Fee</h3>
-                    <p>4.4% + $0.30 transaction fee, plus 18% GST on that fee.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-icon"><i class="fas fa-exchange-alt"></i></div>
-                    <h3>Currency Conversion</h3>
-                    <p>USD converts to INR at 3.8% below the Google/market rate.</p>
-                </div>
-                <div class="step-card">
-                    <div class="step-icon"><i class="fas fa-university"></i></div>
-                    <h3>Bank Deposit</h3>
-                    <p>Final INR amount is deposited to your Indian bank account.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="section-default" id="faq">
-        <div class="container">
-            <h2 class="section-title">Frequently Asked Questions</h2>
-            <div class="faq-list">
-                <div class="faq-item">
-                    <button class="faq-q" onclick="toggleFAQ(this)">
-                        <span>What is the PayPal Fee Conversion Calculator?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="faq-a"><p>A free tool that helps Indian freelancers estimate exactly how much INR they'll receive from a USD PayPal payment. It accounts for the 4.4% + $0.30 fee, 18% GST, and PayPal's 3.8% FX markup.</p></div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-q" onclick="toggleFAQ(this)">
-                        <span>How are the PayPal fees calculated?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="faq-a"><p>PayPal charges <strong>4.4% + $0.30</strong> for international receipts in India. The Indian government adds <strong>18% GST</strong> on that fee. For $100: fee = $4.70, GST = $0.85, total deduction = $5.55.</p></div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-q" onclick="toggleFAQ(this)">
-                        <span>What is the USD to INR conversion fee?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="faq-a"><p>PayPal uses a rate <strong>3.8% lower</strong> than the mid-market rate. If Google shows ₹85/USD, PayPal converts at ~₹81.77. This hidden margin is the biggest cost of using PayPal.</p></div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-q" onclick="toggleFAQ(this)">
-                        <span>Can I avoid the currency conversion fee?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="faq-a"><p>Indian PayPal accounts can't hold USD — auto-conversion is mandatory. Alternatives like <strong>Wise</strong> or <strong>Payoneer</strong> offer better rates with lower markups.</p></div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-q" onclick="toggleFAQ(this)">
-                        <span>How accurate is this calculator?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="faq-a"><p>Very close to actual amounts. We use live exchange rates and PayPal's published fee structure. Actual results may differ slightly due to real-time rate fluctuations.</p></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Testimonials -->
-    <section class="section-alt" id="reviews">
-        <div class="container">
-            <h2 class="section-title">What Our Users Say</h2>
-            <div class="trust-bar">
-                <span class="trust-score">4.9<small>/5</small></span>
-                <div class="trust-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
-                <span class="trust-count">Based on 2,847 reviews</span>
-            </div>
-            <div class="testimonials-grid">
-                <div class="testimonial-card">
-                    <div class="t-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-                    <p>"Saved me from undercharging my US clients. Now I know exactly how much to invoice."</p>
-                    <div class="t-author"><div class="t-avatar">RS</div><div><strong>Rahul Sharma</strong><span>Developer, Bangalore</span></div></div>
-                </div>
-                <div class="testimonial-card">
-                    <div class="t-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-                    <p>"Super accurate. I use this every time before accepting a PayPal payment."</p>
-                    <div class="t-author"><div class="t-avatar">PA</div><div><strong>Priya Agarwal</strong><span>Designer, Mumbai</span></div></div>
-                </div>
-                <div class="testimonial-card">
-                    <div class="t-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
-                    <p>"The 3.8% FX markup was a surprise. This tool made it clear how much I was losing."</p>
-                    <div class="t-author"><div class="t-avatar">AK</div><div><strong>Amit Kumar</strong><span>Writer, Delhi</span></div></div>
-                </div>
-                <div class="testimonial-card">
-                    <div class="t-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
-                    <p>"Great tool for freelancers! Helps me plan invoices knowing the real amount I'll receive."</p>
-                    <div class="t-author"><div class="t-avatar">NM</div><div><strong>Neha Mehta</strong><span>UX Designer, Pune</span></div></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="main-footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-col">
-                    <h4>ABOUT US</h4>
-                    <p>HostingTools provides free online calculators and web tools for freelancers, developers, and businesses.</p>
-                    <div class="social-icons">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
+                <!-- Quick Presets -->
+                <div class="presets-row">
+                    <span class="presets-label">Quick:</span>
+                    <div class="preset-chips" id="presetChips">
+                        <!-- Filled by JS based on mode -->
                     </div>
                 </div>
-                <div class="footer-col">
-                    <h4>SERVICES</h4>
+
+                <!-- Action Button -->
+                <button class="calculate-btn" id="calcBtn" onclick="calculate()">
+                    <i class="fas fa-calculator"></i> Calculate
+                </button>
+
+                <!-- Forward Mode Results -->
+                <div class="results-card" id="forwardResults">
+                    <div class="hero-result">
+                        <span class="hero-label">Net Credited to Indian Bank</span>
+                        <div class="hero-value" id="resTotalINR">₹0.00</div>
+                        <div class="hero-subtext">
+                            <span>Effective Rate: <strong id="resEffectiveRate">₹--.--</strong></span>
+                            <span class="bullet">•</span>
+                            <span class="loss-badge" id="resLossBadge">-₹0.00 in fees</span>
+                        </div>
+                    </div>
+
+                    <!-- Breakdown Table -->
+                    <div class="breakdown-list">
+                        <div class="breakdown-item">
+                            <span class="item-name"><i class="fas fa-arrow-circle-right icon-muted"></i> Client Sent (Gross)</span>
+                            <span class="item-val bold" id="resAmountSent">$0.00</span>
+                        </div>
+                        <div class="breakdown-item deduction">
+                            <span class="item-name"><i class="fas fa-minus-circle"></i> PayPal Fee (4.4% + $0.30)</span>
+                            <span class="item-val" id="resPaypalFee">-$0.00</span>
+                        </div>
+                        <div class="breakdown-item deduction">
+                            <span class="item-name"><i class="fas fa-minus-circle"></i> 18% GST on Fee (India)</span>
+                            <span class="item-val" id="resGST">-$0.00</span>
+                        </div>
+                        <div class="breakdown-item subtotal">
+                            <span class="item-name">Net USD Remaining</span>
+                            <span class="item-val bold" id="resNetUSD">$0.00</span>
+                        </div>
+                        <div class="breakdown-divider"></div>
+                        <div class="breakdown-item">
+                            <span class="item-name"><i class="fas fa-globe icon-muted"></i> Market Exchange Rate</span>
+                            <span class="item-val" id="resBaseRate">₹0.00</span>
+                        </div>
+                        <div class="breakdown-item deduction">
+                            <span class="item-name"><i class="fas fa-exchange-alt"></i> PayPal 3.8% FX Margin</span>
+                            <span class="item-val" id="resFxMarkup">-₹0.00/USD</span>
+                        </div>
+                        <div class="breakdown-item subtotal">
+                            <span class="item-name">Conversion Rate Applied</span>
+                            <span class="item-val bold text-accent" id="resAppliedRate">₹0.00</span>
+                        </div>
+                        <div class="breakdown-divider"></div>
+                        <div class="breakdown-item total-row">
+                            <span class="item-name"><i class="fas fa-wallet text-green"></i> Total Reaching Your Bank</span>
+                            <span class="item-val total-highlight" id="resFinalDeposit">₹0.00</span>
+                        </div>
+                        <div class="breakdown-item summary-row">
+                            <span class="item-name">Total Lost to Fees & Conversion</span>
+                            <span class="item-val text-red" id="resTotalLoss">₹0.00 (0%)</span>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="action-btn" onclick="copyBreakdown('forward')">
+                            <i class="far fa-copy"></i> <span id="copyForwardBtnText">Copy Breakdown</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reverse Mode Results -->
+                <div class="results-card" id="reverseResults" style="display: none;">
+                    <div class="hero-result invoice-theme">
+                        <span class="hero-label">Ask Your Client To Send</span>
+                        <div class="hero-value text-accent" id="revRequiredUSD">$0.00</div>
+                        <div class="hero-subtext">
+                            <span>You Receive Net: <strong id="revTargetDisplay">₹0.00</strong></span>
+                            <span class="bullet">•</span>
+                            <span class="loss-badge" id="revFeeNotice">All fees covered</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown-list">
+                        <div class="breakdown-item">
+                            <span class="item-name"><i class="fas fa-bullseye text-accent"></i> Target in Your Bank</span>
+                            <span class="item-val bold" id="revTargetGoal">₹0.00</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="item-name"><i class="fas fa-file-invoice"></i> Invoiced Amount to Client</span>
+                            <span class="item-val bold text-accent" id="revInvoicedGross">$0.00</span>
+                        </div>
+                        <div class="breakdown-divider"></div>
+                        <div class="breakdown-label-title">Deductions PayPal will make on this invoice:</div>
+                        <div class="breakdown-item deduction">
+                            <span class="item-name"><i class="fas fa-minus-circle"></i> PayPal 4.4% + $0.30 Fee</span>
+                            <span class="item-val" id="revPaypalFee">-$0.00</span>
+                        </div>
+                        <div class="breakdown-item deduction">
+                            <span class="item-name"><i class="fas fa-minus-circle"></i> 18% Indian GST</span>
+                            <span class="item-val" id="revGST">-$0.00</span>
+                        </div>
+                        <div class="breakdown-item subtotal">
+                            <span class="item-name">Net USD Before Bank Payout</span>
+                            <span class="item-val bold" id="revNetUSD">$0.00</span>
+                        </div>
+                        <div class="breakdown-divider"></div>
+                        <div class="breakdown-item">
+                            <span class="item-name"><i class="fas fa-exchange-alt icon-muted"></i> PayPal FX Rate Used</span>
+                            <span class="item-val" id="revEffectiveRate">₹0.00</span>
+                        </div>
+                        <div class="breakdown-item total-row">
+                            <span class="item-name"><i class="fas fa-check-circle text-green"></i> Final Deposited into Bank</span>
+                            <span class="item-val total-highlight" id="revFinalBank">₹0.00</span>
+                        </div>
+                        <div class="breakdown-item summary-row">
+                            <span class="item-name">Total Fees Client Absorbs For You</span>
+                            <span class="item-val text-muted" id="revExtraBilled">+$0.00 (₹0.00)</span>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="action-btn primary" onclick="copyInvoiceText()">
+                            <i class="fas fa-comment-dollar"></i> <span id="copyInvoiceBtnText">Copy Client Note</span>
+                        </button>
+                        <button class="action-btn" onclick="copyBreakdown('reverse')">
+                            <i class="far fa-copy"></i> <span id="copyRevBreakdownBtnText">Copy Details</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Collapsible Formula / Rules Guide (Compact & Useful) -->
+            <details class="rules-card">
+                <summary class="rules-summary">
+                    <span><i class="fas fa-info-circle"></i> PayPal India Fee Rules & Formula</span>
+                    <i class="fas fa-chevron-down arrow-icon"></i>
+                </summary>
+                <div class="rules-content">
                     <ul>
-                        <li><a href="#">Domain Registration</a></li>
-                        <li><a href="#">Web Hosting</a></li>
-                        <li><a href="#">Reseller Hosting</a></li>
-                        <li><a href="#">VPS Hosting</a></li>
-                        <li><a href="#">SSL Certificates</a></li>
+                        <li><strong>Standard Fee:</strong> 4.40% + $0.30 USD per transaction.</li>
+                        <li><strong>GST (Goods & Services Tax):</strong> 18% charged on top of the PayPal fee.</li>
+                        <li><strong>Currency Conversion Margin:</strong> PayPal applies ~3.8% spread below mid-market Google rate.</li>
+                        <li><strong>Effective Formula:</strong> <code>Net USD = Amount × 0.94808 - $0.354</code>, then converted at <code>Market Rate × 0.962</code>.</li>
                     </ul>
                 </div>
-                <div class="footer-col">
-                    <h4>INFORMATION</h4>
-                    <ul>
-                        <li><a href="#">Blog</a></li>
-                        <li><a href="#">Privacy Policy</a></li>
-                        <li><a href="#">Terms of Service</a></li>
-                        <li><a href="#">Refund Policy</a></li>
-                        <li><a href="#">Contact Us</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <div class="payment-icons">
-                    <i class="fab fa-cc-visa"></i><i class="fab fa-cc-mastercard"></i><i class="fab fa-cc-amex"></i><i class="fab fa-cc-paypal"></i><i class="fab fa-google-pay"></i>
-                </div>
-                <p>&copy; 2024-2026 HostingTools. All rights reserved. Made with <i class="fas fa-heart" style="color:#e74c3c"></i> in India.</p>
-            </div>
+            </details>
+
         </div>
+    </main>
+
+    <!-- Simple Minimal Footer -->
+    <footer class="app-footer">
+        <p>Personal Tool • PayPal USD to INR Calculator • Rates updated in real-time</p>
     </footer>
 
-    <!-- WhatsApp Float -->
-    <a href="https://wa.me/919999999999" class="whatsapp-btn" target="_blank" rel="noopener">
-        <i class="fab fa-whatsapp"></i>
-    </a>
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">Copied to clipboard!</div>
 
     <script src="script.js"></script>
 </body>

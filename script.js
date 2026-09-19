@@ -1,243 +1,452 @@
-// ===========================
-// PayPal Fee Conversion Calculator
-// Dual Mode + Dark/Light Theme
-// ===========================
+// ===================================================
+// PayPal Fee Calculator — Personal Tool Logic
+// Dual Mode (Forward USD to INR & Reverse Invoice)
+// Dark / Light Theme, Live Rate & Clipboard Actions
+// ===================================================
 
-let baseExchangeRate = 83.00;
-let rateSource = 'fallback';
-let currentMode = 'forward';
+let baseExchangeRate = 86.20;
+let fxMarkupPercent = 3.8;
+let currentMode = 'forward'; // 'forward' | 'reverse'
+let reverseTargetType = 'inr'; // 'inr' | 'usd'
 
 // Constants
 const PAYPAL_FEE_PERCENT = 0.044;
 const PAYPAL_FIXED_FEE = 0.30;
 const GST_RATE = 0.18;
-const FX_MARKUP = 0.038;
-const NET_FACTOR = 1 - (PAYPAL_FEE_PERCENT * (1 + GST_RATE)); // 0.94808
-const FIXED_DEDUCTION = PAYPAL_FIXED_FEE * (1 + GST_RATE);     // 0.354
+// NET_FACTOR: 1 - (0.044 * 1.18) = 0.94808
+const NET_FACTOR = 1 - (PAYPAL_FEE_PERCENT * (1 + GST_RATE));
+// FIXED_DEDUCTION: 0.30 * 1.18 = 0.354
+const FIXED_DEDUCTION = PAYPAL_FIXED_FEE * (1 + GST_RATE);
 
-// ===========================
-// Theme Toggle
-// ===========================
+// Presets data
+const PRESETS = {
+    forward: [50, 100, 200, 500, 1000, 2000],
+    reverse_inr: [5000, 10000, 25000, 50000, 100000],
+    reverse_usd: [50, 100, 200, 500, 1000]
+};
+
+// ===================================================
+// Theme Management
+// ===================================================
+function initTheme() {
+    const saved = localStorage.getItem('paycalc_theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = saved || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+}
+
 function toggleTheme() {
-    const html = document.documentElement;
-    const icon = document.getElementById('themeIcon');
-    const current = html.getAttribute('data-theme');
-
-    if (current === 'dark') {
-        html.setAttribute('data-theme', 'light');
-        icon.className = 'fas fa-moon';
-        localStorage.setItem('theme', 'light');
-    } else {
-        html.setAttribute('data-theme', 'dark');
-        icon.className = 'fas fa-sun';
-        localStorage.setItem('theme', 'dark');
-    }
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('paycalc_theme', next);
 }
 
-function loadTheme() {
-    const saved = localStorage.getItem('theme');
-    const icon = document.getElementById('themeIcon');
-
-    if (saved === 'dark') {
-        document.documentElement.setAttribute('data-theme', 'dark');
-        icon.className = 'fas fa-sun';
-    } else {
-        document.documentElement.setAttribute('data-theme', 'light');
-        icon.className = 'fas fa-moon';
-    }
-}
-
-// ===========================
-// Exchange Rate
-// ===========================
+// ===================================================
+// Exchange Rate Management
+// ===================================================
 async function fetchExchangeRate() {
-    const statusEl = document.getElementById('rateStatusText');
-    const infoEl = document.getElementById('exchangeRateInfo');
+    const syncIcon = document.getElementById('syncIcon');
+    if (syncIcon) syncIcon.classList.add('spin');
 
     try {
         const res = await fetch('https://open.er-api.com/v6/latest/USD');
         const data = await res.json();
-
         if (data?.result === 'success' && data.rates?.INR) {
-            baseExchangeRate = data.rates.INR;
-            rateSource = 'live';
-            statusEl.textContent = `Live rate: 1 USD = ₹${baseExchangeRate.toFixed(2)}`;
-            infoEl.classList.add('loaded');
-            infoEl.classList.remove('error');
-        } else {
-            throw new Error('Bad response');
+            baseExchangeRate = parseFloat(data.rates.INR.toFixed(2));
+            updateRateDisplay();
         }
-    } catch {
+    } catch (e) {
         try {
             const res2 = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=INR');
             const data2 = await res2.json();
             if (data2?.rates?.INR) {
-                baseExchangeRate = data2.rates.INR;
-                rateSource = 'live';
-                statusEl.textContent = `Live rate: 1 USD = ₹${baseExchangeRate.toFixed(2)}`;
-                infoEl.classList.add('loaded');
-                infoEl.classList.remove('error');
-            } else { throw new Error(); }
+                baseExchangeRate = parseFloat(data2.rates.INR.toFixed(2));
+                updateRateDisplay();
+            }
         } catch {
-            rateSource = 'fallback';
-            statusEl.textContent = `Fallback rate: 1 USD = ₹${baseExchangeRate.toFixed(2)}`;
-            infoEl.classList.add('error');
-            infoEl.classList.remove('loaded');
+            console.log('Using default exchange rate:', baseExchangeRate);
+        }
+    } finally {
+        if (syncIcon) {
+            setTimeout(() => syncIcon.classList.remove('spin'), 400);
         }
     }
 }
 
-// ===========================
-// Mode Switch
-// ===========================
+function updateRateDisplay() {
+    const headerRate = document.getElementById('headerRateText');
+    const customRateInput = document.getElementById('customBaseRate');
+    const customMarkupInput = document.getElementById('customFxMarkup');
+    const previewEffective = document.getElementById('previewEffectiveRate');
+
+    if (headerRate) headerRate.textContent = `1 USD = ₹${baseExchangeRate.toFixed(2)}`;
+    if (customRateInput) customRateInput.value = baseExchangeRate.toFixed(2);
+    if (customMarkupInput) customMarkupInput.value = fxMarkupPercent.toFixed(1);
+
+    const eff = getEffectiveRate();
+    if (previewEffective) previewEffective.textContent = `₹${eff.toFixed(2)}`;
+
+    calculate();
+}
+
+function getEffectiveRate() {
+    return baseExchangeRate * (1 - (fxMarkupPercent / 100));
+}
+
+function toggleRateSettings() {
+    const panel = document.getElementById('rateSettingsPanel');
+    panel.classList.toggle('open');
+}
+
+function updateCustomRate() {
+    const rateVal = parseFloat(document.getElementById('customBaseRate').value);
+    const markupVal = parseFloat(document.getElementById('customFxMarkup').value);
+
+    if (!isNaN(rateVal) && rateVal > 0) baseExchangeRate = rateVal;
+    if (!isNaN(markupVal) && markupVal >= 0) fxMarkupPercent = markupVal;
+
+    updateRateDisplay();
+}
+
+// ===================================================
+// Mode & Presets Switching
+// ===================================================
 function switchMode(mode) {
     currentMode = mode;
+    const tabForward = document.getElementById('tabForward');
+    const tabReverse = document.getElementById('tabReverse');
+    const inputLabel = document.getElementById('inputLabel');
+    const inputHint = document.getElementById('inputHint');
+    const inputPrefix = document.getElementById('inputPrefix');
     const input = document.getElementById('amountInput');
+    const reverseSubmode = document.getElementById('reverseSubmode');
+    const forwardCard = document.getElementById('forwardResults');
+    const reverseCard = document.getElementById('reverseResults');
 
-    document.getElementById('resultsSection').classList.remove('visible');
-    document.getElementById('reverseResultsSection').classList.remove('visible');
-    input.value = '';
-
-    document.getElementById('modeForward').classList.toggle('active', mode === 'forward');
-    document.getElementById('modeReverse').classList.toggle('active', mode === 'reverse');
+    tabForward.classList.toggle('active', mode === 'forward');
+    tabReverse.classList.toggle('active', mode === 'reverse');
 
     if (mode === 'forward') {
-        document.getElementById('inputLabel').textContent = 'Enter amount (in $):';
-        document.getElementById('inputPrefix').textContent = '$';
-        input.placeholder = 'e.g. 100';
+        inputLabel.textContent = 'Amount Sent by Client:';
+        inputHint.textContent = 'Client pays in USD';
+        inputPrefix.textContent = '$';
+        input.placeholder = '100';
+        if (reverseSubmode) reverseSubmode.style.display = 'none';
+        if (forwardCard) forwardCard.style.display = 'block';
+        if (reverseCard) reverseCard.style.display = 'none';
     } else {
-        document.getElementById('inputLabel').textContent = 'Enter desired amount (in ₹):';
-        document.getElementById('inputPrefix').textContent = '₹';
-        input.placeholder = 'e.g. 8000';
+        if (reverseSubmode) reverseSubmode.style.display = 'block';
+        if (forwardCard) forwardCard.style.display = 'none';
+        if (reverseCard) reverseCard.style.display = 'block';
+        updateReverseInputLabels();
     }
 
+    renderPresets();
+    calculate();
     input.focus();
 }
 
-// ===========================
-// Calculate
-// ===========================
-function calculateFee() {
-    currentMode === 'forward' ? calcForward() : calcReverse();
+function onTargetTypeChange() {
+    const radios = document.getElementsByName('targetType');
+    for (const r of radios) {
+        if (r.checked) {
+            reverseTargetType = r.value;
+            break;
+        }
+    }
+    updateReverseInputLabels();
+    renderPresets();
+    calculate();
 }
 
-function calcForward() {
+function updateReverseInputLabels() {
+    const inputLabel = document.getElementById('inputLabel');
+    const inputHint = document.getElementById('inputHint');
+    const inputPrefix = document.getElementById('inputPrefix');
     const input = document.getElementById('amountInput');
-    const amt = parseFloat(input.value);
-    if (!validate(amt, input)) return;
 
-    const fee = (amt * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE;
-    const gst = fee * GST_RATE;
-    const net = amt - fee - gst;
-    const effRate = baseExchangeRate * (1 - FX_MARKUP);
-    const fxDiff = baseExchangeRate - effRate;
-    const finalINR = net * effRate;
-    const idealINR = amt * baseExchangeRate;
-    const loss = idealINR - finalINR;
+    if (reverseTargetType === 'inr') {
+        inputLabel.textContent = 'Target Amount Needed in Bank:';
+        inputHint.textContent = 'Exact ₹ credited to Indian account';
+        inputPrefix.textContent = '₹';
+        input.placeholder = '10000';
+    } else {
+        inputLabel.textContent = 'Desired Net USD Value:';
+        inputHint.textContent = 'Full USD value without losing fees';
+        inputPrefix.textContent = '$';
+        input.placeholder = '100';
+    }
+}
+
+function renderPresets() {
+    const container = document.getElementById('presetChips');
+    if (!container) return;
+
+    let list = [];
+    let symbol = '$';
+
+    if (currentMode === 'forward') {
+        list = PRESETS.forward;
+        symbol = '$';
+    } else if (reverseTargetType === 'inr') {
+        list = PRESETS.reverse_inr;
+        symbol = '₹';
+    } else {
+        list = PRESETS.reverse_usd;
+        symbol = '$';
+    }
+
+    container.innerHTML = '';
+    list.forEach(val => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'preset-chip';
+        chip.textContent = symbol === '₹' ? `₹${fmtNum(val, 0)}` : `$${val}`;
+        chip.onclick = () => {
+            document.getElementById('amountInput').value = val;
+            calculate();
+        };
+        container.appendChild(chip);
+    });
+}
+
+function clearInput() {
+    const input = document.getElementById('amountInput');
+    input.value = '';
+    calculate();
+    input.focus();
+}
+
+// ===================================================
+// Core Calculations
+// ===================================================
+function calculate() {
+    const input = document.getElementById('amountInput');
+    const val = parseFloat(input.value);
+
+    if (currentMode === 'forward') {
+        calcForward(val);
+    } else {
+        calcReverse(val);
+    }
+}
+
+// Mode 1: Client sends USD -> How much INR lands in bank
+function calcForward(rawAmt) {
+    const amt = isNaN(rawAmt) || rawAmt <= 0 ? 0 : rawAmt;
+    const effRate = getEffectiveRate();
+    const fxSpreadPerUSD = baseExchangeRate - effRate;
+
+    let fee = 0;
+    let gst = 0;
+    let netUSD = 0;
+    let finalINR = 0;
+    let idealINR = 0;
+    let lossINR = 0;
+    let lossPercent = 0;
+
+    if (amt > 0) {
+        fee = (amt * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE;
+        gst = fee * GST_RATE;
+        netUSD = Math.max(0, amt - fee - gst);
+        finalINR = netUSD * effRate;
+        idealINR = amt * baseExchangeRate;
+        lossINR = Math.max(0, idealINR - finalINR);
+        lossPercent = idealINR > 0 ? (lossINR / idealINR) * 100 : 0;
+    }
+
+    // Update DOM
+    setEl('resTotalINR', `₹${fmtNum(finalINR, 2)}`);
+    setEl('resEffectiveRate', `₹${effRate.toFixed(2)}/USD`);
+    setEl('resLossBadge', `-₹${fmtNum(lossINR, 2)} (${lossPercent.toFixed(1)}% total lost)`);
 
     setEl('resAmountSent', `$${amt.toFixed(2)}`);
     setEl('resPaypalFee', `-$${fee.toFixed(2)}`);
     setEl('resGST', `-$${gst.toFixed(2)}`);
-    setEl('resNetUSD', `$${net.toFixed(2)}`);
-    setEl('resBaseRate', `₹${baseExchangeRate.toFixed(2)}`);
-    setEl('resFxMarkup', `-₹${fxDiff.toFixed(2)}/USD`);
-    setEl('resEffectiveRate', `₹${effRate.toFixed(2)}`);
-    setEl('resTotalINR', `₹${fmtNum(finalINR)}`);
-    setEl('resTotalLoss', `-₹${fmtNum(loss)}`);
-    setEl('resultsTimestamp', timestamp());
+    setEl('resNetUSD', `$${netUSD.toFixed(2)}`);
 
-    showResult('resultsSection', 'reverseResultsSection');
+    setEl('resBaseRate', `₹${baseExchangeRate.toFixed(2)}`);
+    setEl('resFxMarkup', `-₹${fxSpreadPerUSD.toFixed(2)} (${fxMarkupPercent}%)`);
+    setEl('resAppliedRate', `₹${effRate.toFixed(2)}`);
+
+    setEl('resFinalDeposit', `₹${fmtNum(finalINR, 2)}`);
+    setEl('resTotalLoss', `-₹${fmtNum(lossINR, 2)} (${lossPercent.toFixed(1)}%)`);
 }
 
-function calcReverse() {
-    const input = document.getElementById('amountInput');
-    const desired = parseFloat(input.value);
-    if (!validate(desired, input)) return;
+// Mode 2: Reverse / Invoice -> Calculate what to ask the client
+function calcReverse(rawAmt) {
+    const amt = isNaN(rawAmt) || rawAmt <= 0 ? 0 : rawAmt;
+    const effRate = getEffectiveRate();
 
-    const effRate = baseExchangeRate * (1 - FX_MARKUP);
-    const fxDiff = baseExchangeRate - effRate;
-    const netNeeded = desired / effRate;
-    const reqUSD = (netNeeded + FIXED_DEDUCTION) / NET_FACTOR;
+    let targetINR = 0;
+    let targetDisplay = '';
+    let reqUSD = 0;
+    let fee = 0;
+    let gst = 0;
+    let netUSD = 0;
+    let actualDepositedINR = 0;
+    let extraBilledUSD = 0;
+    let extraBilledINR = 0;
 
-    // Verify forward
-    const fee = (reqUSD * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE;
-    const gst = fee * GST_RATE;
-    const verifyNet = reqUSD - fee - gst;
-    const idealINR = reqUSD * baseExchangeRate;
-    const actualINR = verifyNet * effRate;
-    const totalChargesINR = idealINR - actualINR;
-    const lossPct = (totalChargesINR / idealINR) * 100;
+    if (amt > 0) {
+        if (reverseTargetType === 'inr') {
+            targetINR = amt;
+            targetDisplay = `₹${fmtNum(targetINR, 2)}`;
+            const netNeededUSD = targetINR / effRate;
+            reqUSD = (netNeededUSD + FIXED_DEDUCTION) / NET_FACTOR;
+        } else {
+            // Target is USD equivalent without losing fees
+            targetDisplay = `$${amt.toFixed(2)} (₹${fmtNum(amt * baseExchangeRate, 2)})`;
+            targetINR = amt * baseExchangeRate;
+            const netNeededUSD = (amt * baseExchangeRate) / effRate;
+            reqUSD = (netNeededUSD + FIXED_DEDUCTION) / NET_FACTOR;
+        }
+
+        fee = (reqUSD * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE;
+        gst = fee * GST_RATE;
+        netUSD = reqUSD - fee - gst;
+        actualDepositedINR = netUSD * effRate;
+
+        const baseEquivalentUSD = targetINR / baseExchangeRate;
+        extraBilledUSD = Math.max(0, reqUSD - baseEquivalentUSD);
+        extraBilledINR = extraBilledUSD * baseExchangeRate;
+    }
 
     setEl('revRequiredUSD', `$${reqUSD.toFixed(2)}`);
-    setEl('revDesiredINR', `₹${fmtNum(desired)}`);
+    setEl('revTargetDisplay', targetDisplay);
+    setEl('revFeeNotice', '0% loss to you • All fees covered');
+
+    setEl('revTargetGoal', targetDisplay);
+    setEl('revInvoicedGross', `$${reqUSD.toFixed(2)}`);
+
     setEl('revPaypalFee', `-$${fee.toFixed(2)}`);
     setEl('revGST', `-$${gst.toFixed(2)}`);
-    setEl('revNetUSD', `$${verifyNet.toFixed(2)}`);
-    setEl('revBaseRate', `₹${baseExchangeRate.toFixed(2)}`);
-    setEl('revFxMarkup', `-₹${fxDiff.toFixed(2)}/USD`);
+    setEl('revNetUSD', `$${netUSD.toFixed(2)}`);
     setEl('revEffectiveRate', `₹${effRate.toFixed(2)}`);
-    setEl('revTotalCharges', `-₹${fmtNum(totalChargesINR)}`);
-    setEl('revLossPercent', `${lossPct.toFixed(1)}%`);
-    setEl('reverseTimestamp', timestamp());
 
-    showResult('reverseResultsSection', 'resultsSection');
+    setEl('revFinalBank', `₹${fmtNum(actualDepositedINR, 2)}`);
+    setEl('revExtraBilled', `+$${extraBilledUSD.toFixed(2)} (~₹${fmtNum(extraBilledINR, 0)})`);
 }
 
-// ===========================
-// Helpers
-// ===========================
-function validate(val, el) {
-    if (isNaN(val) || val <= 0) {
-        el.style.outline = '2px solid var(--red)';
-        el.focus();
-        setTimeout(() => el.style.outline = 'none', 2000);
-        return false;
+// ===================================================
+// Copy Actions & Toast
+// ===================================================
+function copyInvoiceText() {
+    const reqUSD = document.getElementById('revRequiredUSD').textContent;
+    const target = document.getElementById('revTargetDisplay').textContent;
+
+    const note = `Hi,\n\nTo ensure the exact net amount (${target}) is received after international PayPal fees (4.4% + $0.30 fixed fee, 18% GST, and currency conversion spread), the total invoice amount is ${reqUSD}.\n\nThank you!`;
+
+    navigator.clipboard.writeText(note).then(() => {
+        showToast('Client invoice note copied!');
+    }).catch(() => {
+        fallbackCopy(note);
+    });
+}
+
+function copyBreakdown(mode) {
+    let text = '';
+    if (mode === 'forward') {
+        const sent = document.getElementById('resAmountSent').textContent;
+        const fee = document.getElementById('resPaypalFee').textContent;
+        const gst = document.getElementById('resGST').textContent;
+        const netUSD = document.getElementById('resNetUSD').textContent;
+        const effRate = document.getElementById('resAppliedRate').textContent;
+        const deposit = document.getElementById('resFinalDeposit').textContent;
+        const loss = document.getElementById('resTotalLoss').textContent;
+
+        text = `PayPal Fee Breakdown (USD to INR):\n` +
+               `• Amount Sent: ${sent}\n` +
+               `• PayPal Fee: ${fee}\n` +
+               `• Indian GST (18%): ${gst}\n` +
+               `• Net USD: ${netUSD}\n` +
+               `• Effective Rate: ${effRate}\n` +
+               `• Credited to Bank: ${deposit}\n` +
+               `• Total Deductions: ${loss}`;
+    } else {
+        const invoiced = document.getElementById('revInvoicedGross').textContent;
+        const target = document.getElementById('revTargetGoal').textContent;
+        const fee = document.getElementById('revPaypalFee').textContent;
+        const gst = document.getElementById('revGST').textContent;
+        const netUSD = document.getElementById('revNetUSD').textContent;
+        const deposit = document.getElementById('revFinalBank').textContent;
+
+        text = `PayPal Reverse Invoice Breakdown:\n` +
+               `• Ask Client to Send: ${invoiced}\n` +
+               `• Target Net Amount: ${target}\n` +
+               `• PayPal Fee: ${fee}\n` +
+               `• Indian GST (18%): ${gst}\n` +
+               `• Net USD: ${netUSD}\n` +
+               `• Deposited in Bank: ${deposit}`;
     }
-    return true;
+
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('Breakdown copied to clipboard!');
+    }).catch(() => {
+        fallbackCopy(text);
+    });
 }
 
-function setEl(id, text) { document.getElementById(id).textContent = text; }
-
-function showResult(showId, hideId) {
-    document.getElementById(hideId).classList.remove('visible');
-    const el = document.getElementById(showId);
-    el.classList.add('visible');
-    setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
+function fallbackCopy(text) {
+    const area = document.createElement('textarea');
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand('copy');
+    document.body.removeChild(area);
+    showToast('Copied to clipboard!');
 }
 
-function timestamp() {
-    const d = new Date();
-    return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-        + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2400);
 }
 
-function fmtNum(n) {
-    const [int, dec] = n.toFixed(2).split('.');
-    const last3 = int.slice(-3);
-    const rest = int.slice(0, -3);
-    return (rest.length ? rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' : '') + last3 + '.' + dec;
+// ===================================================
+// Helper Utilities
+// ===================================================
+function setEl(id, text) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
 }
 
-// FAQ
-function toggleFAQ(btn) {
-    const item = btn.parentElement;
-    const open = item.classList.contains('open');
-    document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
-    if (!open) item.classList.add('open');
+function fmtNum(n, decimals = 2) {
+    if (isNaN(n)) return '0.00';
+    const parts = n.toFixed(decimals).split('.');
+    let intPart = parts[0];
+    const decPart = parts[1] !== undefined ? '.' + parts[1] : '';
+
+    // Indian numbering format for thousands and lakhs
+    const last3 = intPart.slice(-3);
+    const rest = intPart.slice(0, -3);
+    if (rest.length > 0) {
+        intPart = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + last3;
+    } else {
+        intPart = last3;
+    }
+    return intPart + decPart;
 }
 
-// Mobile Nav
-document.getElementById('mobileToggle').addEventListener('click', () => {
-    document.getElementById('navLinks').classList.toggle('open');
-});
-
-// Enter key
-document.getElementById('amountInput').addEventListener('keypress', e => {
-    if (e.key === 'Enter') calculateFee();
-});
-
-// Init
+// ===================================================
+// Initialization & Event Listeners
+// ===================================================
 document.addEventListener('DOMContentLoaded', () => {
-    loadTheme();
+    initTheme();
+    renderPresets();
+
+    const input = document.getElementById('amountInput');
+    if (input) {
+        input.value = '100'; // Default convenient amount
+        input.addEventListener('input', calculate);
+        input.addEventListener('keypress', e => {
+            if (e.key === 'Enter') calculate();
+        });
+    }
+
     fetchExchangeRate();
+    calculate();
 });
