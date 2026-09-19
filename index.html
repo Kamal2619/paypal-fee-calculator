@@ -138,26 +138,31 @@
             <!-- Rate Adjustment Bar (Fluid & Collapsible) -->
             <div class="rate-settings-panel" id="rateSettingsPanel">
                 <div class="rate-settings-header">
-                    <span><i class="fas fa-sliders-h"></i> Exchange Rate & Margin Settings</span>
+                    <span><i class="fas fa-sliders-h"></i> Dynamic Exchange Rate & Real-World Fluctuations</span>
                     <button class="close-panel-btn" onclick="toggleRateSettings()" aria-label="Close settings">&times;</button>
                 </div>
                 <div class="rate-settings-grid">
                     <div class="setting-item">
-                        <label for="customBaseRate">Market Rate (USD/INR):</label>
+                        <label for="customBaseRate">Live Market Rate (Google / Interbank):</label>
                         <div class="input-with-affix">
                             <span>₹</span>
-                            <input type="number" id="customBaseRate" step="0.01" value="86.20" onchange="updateCustomRate()">
+                            <input type="number" id="customBaseRate" step="0.0001" value="96.10" oninput="updateCustomRate('market')">
                         </div>
                     </div>
                     <div class="setting-item">
                         <label for="customFxMarkup">PayPal Spread / Margin:</label>
                         <div class="input-with-affix">
-                            <input type="number" id="customFxMarkup" step="0.1" value="3.8" onchange="updateCustomRate()">
+                            <input type="number" id="customFxMarkup" step="0.01" value="3.80" oninput="updateCustomRate('markup')">
                             <span>%</span>
                         </div>
                     </div>
                     <div class="setting-item full-width">
-                        <span class="rate-preview-text">Effective PayPal Conversion Rate: <strong id="previewEffectiveRate">₹82.92</strong></span>
+                        <label for="customDirectEffectiveRate">Exact PayPal Conversion Rate (from statement/transaction):</label>
+                        <div class="input-with-affix">
+                            <span>₹</span>
+                            <input type="number" id="customDirectEffectiveRate" step="0.00000000000001" placeholder="e.g. 92.45278772876712" oninput="updateCustomRate('direct')">
+                        </div>
+                        <span class="rate-preview-text">Applied Effective Rate: <strong id="previewEffectiveRate">₹92.45/USD</strong></span>
                     </div>
                 </div>
             </div>
