@@ -766,10 +766,29 @@ function acceptCookies() {
     showToast('Preferences & local cache enabled');
 }
 
-function clearAllCache() {
+const APP_VERSION = '2.2.0';
+
+async function clearAllCache() {
     CacheManager.clearAll();
-    showToast('Local cache & cookies purged. Reloading...');
-    setTimeout(() => window.location.reload(), 1000);
+    localStorage.removeItem('mc_app_version');
+    if ('caches' in window) {
+        try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+        } catch (e) {}
+    }
+    if ('serviceWorker' in navigator) {
+        try {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (let reg of regs) {
+                await reg.unregister();
+            }
+        } catch (e) {}
+    }
+    showToast('Cache & offline storage purged. Refreshing...');
+    setTimeout(() => {
+        window.location.reload(true);
+    }, 600);
 }
 
 // ===================================================
@@ -797,10 +816,36 @@ function fmtNum(n, decimals = 2) {
     return intPart + decPart;
 }
 
-// Register Service Worker for offline PWA capabilities
+// Register Service Worker for offline PWA capabilities with automatic update detection
 function registerServiceWorker() {
     if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
-        navigator.serviceWorker.register('/sw.js').catch(err => {
+        // Automatic version upgrade check
+        const storedVersion = localStorage.getItem('mc_app_version');
+        if (storedVersion !== APP_VERSION) {
+            localStorage.setItem('mc_app_version', APP_VERSION);
+            if ('caches' in window) {
+                caches.keys().then(keys => {
+                    keys.forEach(k => {
+                        if (!k.includes(APP_VERSION)) caches.delete(k);
+                    });
+                });
+            }
+        }
+
+        navigator.serviceWorker.register('./sw.js?v=' + APP_VERSION).then(reg => {
+            reg.update();
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                if (newWorker) {
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            showToast('Updated to latest version! Reloading...');
+                            setTimeout(() => window.location.reload(), 1000);
+                        }
+                    });
+                }
+            });
+        }).catch(err => {
             console.log('SW registration note:', err);
         });
     }
