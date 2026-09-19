@@ -1,11 +1,11 @@
 {
-  "name": "PayCalc™ by Minimal Creates",
-  "short_name": "PayCalc™",
-  "description": "Official PayPal Fee & Reverse Invoice Calculator by Minimal Creates.",
+  "name": "MinimalFee™ by Minimal Creates",
+  "short_name": "MinimalFee™",
+  "description": "Official PayPal Fee & Reverse Invoice Precision Calculator by Minimal Creates.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0f17",
-  "theme_color": "#003087",
+  "background_color": "#080c14",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "assets/mc-icon.png",

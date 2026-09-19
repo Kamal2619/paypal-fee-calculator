@@ -2,14 +2,14 @@
 <html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PayCalc™ — Official PayPal Fee & Invoice Calculator | Minimal Creates</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>MinimalFee™ — PayPal Fee & Reverse Invoice Calculator | Minimal Creates</title>
     
     <!-- Meta & Trademarks -->
-    <meta name="description" content="Official PayCalc™ by Minimal Creates. Calculate exact PayPal USD to INR deductions, GST, FX spread, and reverse invoice amounts.">
+    <meta name="description" content="Official MinimalFee™ by Minimal Creates. Calculate exact PayPal USD to INR deductions, 18% GST, FX markup spread, and zero-loss client reverse invoices.">
     <meta name="author" content="Minimal Creates">
     <meta name="copyright" content="Minimal Creates">
-    <meta name="application-name" content="PayCalc™ by Minimal Creates">
+    <meta name="application-name" content="MinimalFee™ by Minimal Creates">
     <meta name="theme-color" content="#000000">
     
     <!-- Favicon & PWA -->
@@ -21,14 +21,14 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://kamal2619.github.io/paypal-fee-calculator/">
-    <meta property="og:title" content="PayCalc™ — Official Product of Minimal Creates">
-    <meta property="og:description" content="Fast, accurate PayPal USD to INR fee and invoice calculator. Official product of Minimal Creates.">
+    <meta property="og:title" content="MinimalFee™ — Official Product of Minimal Creates">
+    <meta property="og:description" content="Precision PayPal USD to INR fee and zero-loss reverse invoice calculator. Official product of Minimal Creates.">
     <meta property="og:image" content="assets/mc-logo.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="PayCalc™ — Official Product of Minimal Creates">
-    <meta property="twitter:description" content="Fast, accurate PayPal USD to INR fee and invoice calculator. Official product of Minimal Creates.">
+    <meta property="twitter:title" content="MinimalFee™ — Official Product of Minimal Creates">
+    <meta property="twitter:description" content="Precision PayPal USD to INR fee and zero-loss reverse invoice calculator. Official product of Minimal Creates.">
     <meta property="twitter:image" content="assets/mc-logo.png">
 
     <!-- Structured Data / JSON-LD -->
@@ -36,7 +36,7 @@
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "PayCalc™",
+      "name": "MinimalFee™",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "All",
       "author": {
@@ -53,7 +53,7 @@
         "price": "0",
         "priceCurrency": "USD"
       },
-      "description": "Official PayPal Fee & Reverse Invoice Calculator by Minimal Creates."
+      "description": "Official PayPal Fee & Reverse Invoice Precision Calculator by Minimal Creates."
     }
     </script>
 
@@ -77,7 +77,7 @@
                     <div class="product-badge-group">
                         <span class="product-divider">/</span>
                         <div class="product-title-wrap">
-                            <span class="product-title">PayCalc<span class="tm">™</span></span>
+                            <span class="product-title">MinimalFee<span class="tm">™</span></span>
                             <span class="product-badge">USD ⇄ INR</span>
                         </div>
                     </div>
@@ -85,7 +85,7 @@
             </div>
 
             <div class="header-actions">
-                <div class="rate-badge" id="rateBadge" title="Click to adjust exchange rate" onclick="toggleRateSettings()">
+                <div class="rate-badge" id="rateBadge" title="Click to view & adjust exchange rate" onclick="toggleRateSettings()">
                     <i class="fas fa-chart-line"></i>
                     <span id="headerRateText">1 USD = ₹--.--</span>
                     <button class="icon-btn-small" onclick="event.stopPropagation(); fetchExchangeRate(true);" title="Refresh live rate">
@@ -104,12 +104,12 @@
         </div>
     </header>
 
-    <!-- Minimal Creates Watermark / Tagline Bar -->
+    <!-- Minimal Creates Official Tagline Bar -->
     <div class="mc-official-bar">
         <div class="mc-bar-container">
             <span class="mc-verified-tag"><i class="fas fa-cube"></i> MINIMAL CREATES™ OFFICIAL UTILITY</span>
             <span class="mc-bar-bullet">•</span>
-            <span class="mc-bar-desc">PayPal USD to INR Precision Fee & Invoicing Engine</span>
+            <span class="mc-bar-desc">PayPal USD ⇄ INR Precision Fee & Zero-Loss Invoicing Engine</span>
         </div>
     </div>
 
@@ -117,25 +117,29 @@
     <main class="main-wrapper">
         <div class="calculator-box">
 
-            <!-- Mode Selector Tabs -->
+            <!-- Mode Selector Tabs (Fluid & Dynamically Adjustable) -->
             <div class="tab-switch" role="tablist">
-                <button class="tab-btn active" id="tabForward" onclick="switchMode('forward')" role="tab">
-                    <i class="fas fa-arrow-down-left"></i>
-                    <span>I Receive USD</span>
-                    <small>How much ₹ reaches my bank?</small>
+                <button class="tab-btn active" id="tabForward" onclick="switchMode('forward')" role="tab" aria-selected="true">
+                    <div class="tab-btn-icon"><i class="fas fa-arrow-down-left"></i></div>
+                    <div class="tab-btn-text">
+                        <span>I Receive USD</span>
+                        <small>How much ₹ reaches my bank?</small>
+                    </div>
                 </button>
-                <button class="tab-btn" id="tabReverse" onclick="switchMode('reverse')" role="tab">
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Invoice Client</span>
-                    <small>How much $ should I bill?</small>
+                <button class="tab-btn" id="tabReverse" onclick="switchMode('reverse')" role="tab" aria-selected="false">
+                    <div class="tab-btn-icon"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div class="tab-btn-text">
+                        <span>Invoice Client</span>
+                        <small>How much $ should I bill?</small>
+                    </div>
                 </button>
             </div>
 
-            <!-- Rate Adjustment Bar (Collapsible) -->
+            <!-- Rate Adjustment Bar (Fluid & Collapsible) -->
             <div class="rate-settings-panel" id="rateSettingsPanel">
                 <div class="rate-settings-header">
                     <span><i class="fas fa-sliders-h"></i> Exchange Rate & Margin Settings</span>
-                    <button class="close-panel-btn" onclick="toggleRateSettings()">&times;</button>
+                    <button class="close-panel-btn" onclick="toggleRateSettings()" aria-label="Close settings">&times;</button>
                 </div>
                 <div class="rate-settings-grid">
                     <div class="setting-item">
@@ -167,8 +171,8 @@
                         <img src="assets/mc-icon.png" alt="MC" class="calc-mc-cube-icon">
                         <span>MINIMAL CREATES™</span>
                     </div>
-                    <h2 class="calc-brand-title">PayCalc<span class="tm">™</span> <span class="calc-currency-badge">USD ⇄ INR</span></h2>
-                    <p class="calc-brand-subtitle">Precision PayPal International Fee & Reverse Invoice Engine</p>
+                    <h1 class="calc-brand-title">MinimalFee<span class="tm">™</span> <span class="calc-currency-badge">USD ⇄ INR</span></h1>
+                    <p class="calc-brand-subtitle">Precision PayPal International Fee & Zero-Loss Invoicing Engine</p>
                 </div>
 
                 <!-- Amount Input Area -->
@@ -179,14 +183,14 @@
                     </div>
                     <div class="input-input-row">
                         <div class="currency-symbol" id="inputPrefix">$</div>
-                        <input type="number" id="amountInput" placeholder="100" min="0" step="any" autofocus autocomplete="off">
-                        <button class="clear-btn" id="clearBtn" onclick="clearInput()" title="Clear">
+                        <input type="number" id="amountInput" placeholder="100" min="0" step="any" autofocus autocomplete="off" aria-label="Enter Amount">
+                        <button class="clear-btn" id="clearBtn" onclick="clearInput()" title="Clear amount">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Reverse Sub-mode Selector (Only shown in Reverse / Invoice Mode) -->
+                <!-- Reverse Sub-mode Selector (Shown in Reverse / Invoice Mode) -->
                 <div class="reverse-submode-container" id="reverseSubmode" style="display: none;">
                     <span class="submode-label">My Target Goal:</span>
                     <div class="submode-options">
@@ -201,11 +205,11 @@
                     </div>
                 </div>
 
-                <!-- Quick Presets -->
+                <!-- Dynamic Quick Presets -->
                 <div class="presets-row">
                     <span class="presets-label">Quick:</span>
                     <div class="preset-chips" id="presetChips">
-                        <!-- Filled by JS based on mode -->
+                        <!-- Filled dynamically by JS based on mode -->
                     </div>
                 </div>
 
@@ -337,7 +341,7 @@
 
             </div>
 
-            <!-- Collapsible Formula / Rules Guide (Compact & Useful) -->
+            <!-- Collapsible Formula / Rules Guide -->
             <details class="rules-card">
                 <summary class="rules-summary">
                     <span><i class="fas fa-info-circle"></i> PayPal India Fee Rules & Formula</span>
@@ -369,7 +373,7 @@
                 <span class="mc-footer-sub">Independent Digital Tools & Products</span>
             </div>
             <p class="trademark-notice">
-                <strong>PayCalc™</strong> is an official registered utility product developed by <strong>Minimal Creates</strong>.
+                <strong>MinimalFee™</strong> is an official registered utility product developed by <strong>Minimal Creates</strong>.
             </p>
             <p class="legal-notice">
                 © 2024–2026 Minimal Creates™. All rights reserved. PayPal™ is a trademark of PayPal, Inc., registered in the U.S. and other countries.

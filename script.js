@@ -1,5 +1,5 @@
 // ===================================================
-// PayCalc™ by Minimal Creates — Official Script
+// MinimalFee™ by Minimal Creates — Official Engine
 // Dual Mode (Forward USD to INR & Reverse Invoice)
 // Cookie & Cache Manager, Live Rate, Theme & Service Worker
 // ===================================================
@@ -49,7 +49,7 @@ const CookieManager = {
 };
 
 const CacheManager = {
-    CACHE_KEY: 'mc_paycalc_rate_cache_v2',
+    CACHE_KEY: 'mc_minimalfee_rate_cache_v2',
     TTL: 6 * 60 * 60 * 1000, // 6 Hours
 
     getRate() {
@@ -80,7 +80,7 @@ const CacheManager = {
 
     clearAll() {
         localStorage.removeItem(this.CACHE_KEY);
-        localStorage.removeItem('paycalc_theme');
+        localStorage.removeItem('minimalfee_theme');
         CookieManager.erase('mc_last_rate');
         CookieManager.erase('mc_theme');
         CookieManager.erase('mc_calc_mode');
@@ -91,7 +91,7 @@ const CacheManager = {
 // Theme Management
 // ===================================================
 function initTheme() {
-    const saved = localStorage.getItem('paycalc_theme') || CookieManager.get('mc_theme');
+    const saved = localStorage.getItem('minimalfee_theme') || CookieManager.get('mc_theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const theme = saved || (prefersDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
@@ -101,7 +101,7 @@ function toggleTheme() {
     const current = document.documentElement.getAttribute('data-theme') || 'light';
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('paycalc_theme', next);
+    localStorage.setItem('minimalfee_theme', next);
     CookieManager.set('mc_theme', next, 365);
 }
 
@@ -207,7 +207,9 @@ function switchMode(mode) {
     const reverseCard = document.getElementById('reverseResults');
 
     tabForward.classList.toggle('active', mode === 'forward');
+    tabForward.setAttribute('aria-selected', mode === 'forward');
     tabReverse.classList.toggle('active', mode === 'reverse');
+    tabReverse.setAttribute('aria-selected', mode === 'reverse');
 
     if (mode === 'forward') {
         inputLabel.textContent = 'Amount Sent by Client:';
@@ -418,7 +420,7 @@ function copyInvoiceText() {
     const reqUSD = document.getElementById('revRequiredUSD').textContent;
     const target = document.getElementById('revTargetDisplay').textContent;
 
-    const note = `Hi,\n\nTo ensure the exact net amount (${target}) is received after international PayPal fees (4.4% + $0.30 fixed fee, 18% GST, and currency conversion spread), the total invoice amount is ${reqUSD}.\n\nThank you!\n— Minimal Creates PayCalc™`;
+    const note = `Hi,\n\nTo ensure the exact net amount (${target}) is received after international PayPal processing fees (4.4% + $0.30 fixed fee, 18% GST, and currency conversion spread), the total invoice amount is ${reqUSD}.\n\nThank you!\n— MinimalFee™ by Minimal Creates`;
 
     navigator.clipboard.writeText(note).then(() => {
         showToast('Client invoice note copied!');
@@ -438,7 +440,7 @@ function copyBreakdown(mode) {
         const deposit = document.getElementById('resFinalDeposit').textContent;
         const loss = document.getElementById('resTotalLoss').textContent;
 
-        text = `PayPal Fee Breakdown (USD to INR) — Minimal Creates PayCalc™:\n` +
+        text = `PayPal Fee Breakdown (USD to INR) — MinimalFee™ by Minimal Creates:\n` +
                `• Amount Sent: ${sent}\n` +
                `• PayPal Fee: ${fee}\n` +
                `• Indian GST (18%): ${gst}\n` +
@@ -454,7 +456,7 @@ function copyBreakdown(mode) {
         const netUSD = document.getElementById('revNetUSD').textContent;
         const deposit = document.getElementById('revFinalBank').textContent;
 
-        text = `PayPal Reverse Invoice Breakdown — Minimal Creates PayCalc™:\n` +
+        text = `PayPal Reverse Invoice Breakdown — MinimalFee™ by Minimal Creates:\n` +
                `• Ask Client to Send: ${invoiced}\n` +
                `• Target Net Amount: ${target}\n` +
                `• PayPal Fee: ${fee}\n` +
