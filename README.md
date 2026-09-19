@@ -1,4 +1,4 @@
-# PayCalc™ — by Minimal Creates
+# MinimalFee™ — by Minimal Creates
 
 > Official PayPal Fee & Reverse Invoice Calculator for USD to INR transactions. A trademark product of **Minimal Creates**.
 
@@ -6,7 +6,7 @@
 
 ## ⚡ Overview
 
-**PayCalc™** is a precision financial utility designed for freelancers, creators, and agencies receiving international USD payments into Indian bank accounts. It accurately calculates all deductions—including PayPal's 4.4% + $0.30 fee, 18% Indian GST, and currency conversion spreads.
+**MinimalFee™** is a precision financial utility designed for freelancers, creators, and agencies receiving international USD payments into Indian bank accounts. It accurately calculates all deductions—including PayPal's 4.4% + $0.30 fee, 18% Indian GST, and currency conversion spreads.
 
 ---
 
