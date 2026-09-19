@@ -35,7 +35,10 @@
     --gold: #f59e0b;
 
     --mc-brand-bg: #000000;
-    --mc-brand-border: #000000;
+    --mc-brand-border: #1e293b;
+    --mc-bar-bg: #0f172a;
+    --mc-bar-text: #94a3b8;
+    --mc-bar-accent: #38bdf8;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -47,11 +50,11 @@
 }
 
 [data-theme="dark"] {
-    --bg-page: #0b0f17;
-    --bg-surface: #131b2e;
-    --bg-card: #131b2e;
-    --bg-input: #1a243b;
-    --bg-input-focus: #1f2b47;
+    --bg-page: #080c14;
+    --bg-surface: #111827;
+    --bg-card: #111827;
+    --bg-input: #1a2234;
+    --bg-input-focus: #1f2a40;
     --bg-hover: #1e293b;
     --bg-active: #25334d;
     --bg-accent-subtle: #064e3b33;
@@ -59,12 +62,12 @@
     --bg-chip: #1e293b;
     --bg-chip-hover: #2d3e5c;
     --bg-chip-active: #38bdf8;
-    --text-chip-active: #0b0f17;
+    --text-chip-active: #080c14;
 
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --text-dim: #64748b;
-    --border: #232f48;
+    --border: #1f293d;
     --border-strong: #334155;
     --border-accent: #34d399;
 
@@ -78,6 +81,9 @@
 
     --mc-brand-bg: #000000;
     --mc-brand-border: #334155;
+    --mc-bar-bg: #04070e;
+    --mc-bar-text: #64748b;
+    --mc-bar-accent: #38bdf8;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -110,12 +116,12 @@ body {
 }
 
 /* ===================================================
-   Header
+   Official Minimal Creates Header
    =================================================== */
 .app-header {
     background: var(--bg-surface);
     border-bottom: 1px solid var(--border);
-    padding: 12px 20px;
+    padding: 10px 20px;
     position: sticky;
     top: 0;
     z-index: 50;
@@ -123,84 +129,91 @@ body {
 }
 
 .header-container {
-    max-width: 680px;
+    max-width: 720px;
     margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-.brand {
+.brand-lockup {
+    display: flex;
+    align-items: center;
+}
+
+.brand-link {
     display: flex;
     align-items: center;
     gap: 12px;
+    text-decoration: none;
+    color: inherit;
 }
 
-/* MC Brand Badge */
-.brand-badge-mc {
-    width: 38px;
-    height: 38px;
-    border-radius: 9px;
+/* MC Brand Logo Badge */
+.mc-logo-badge {
     background: var(--mc-brand-bg);
     border: 1px solid var(--mc-brand-border);
+    border-radius: 9px;
+    padding: 5px 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 4px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    flex-shrink: 0;
+    height: 44px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.mc-icon-img {
-    width: 100%;
-    height: 100%;
+.mc-logo-badge:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+
+.mc-brand-logo {
+    height: 32px;
+    width: auto;
     object-fit: contain;
+    display: block;
 }
 
-.brand-text h1 {
-    font-size: 1.15rem;
-    font-weight: 800;
-    color: var(--text-main);
+.product-badge-group {
     display: flex;
     align-items: center;
     gap: 8px;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
 }
 
-.brand-text .tm {
-    font-size: 0.65rem;
+.product-divider {
+    font-size: 1.3rem;
+    font-weight: 300;
+    color: var(--text-dim);
+}
+
+.product-title-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+}
+
+.product-title .tm {
+    font-size: 0.62rem;
     vertical-align: super;
     font-weight: 700;
     color: var(--text-dim);
-    margin-left: -4px;
+    margin-left: -2px;
 }
 
-.brand-text .tag {
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 2px 7px;
-    background: var(--bg-accent-subtle);
+.product-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
     color: var(--accent);
-    border: 1px solid var(--border-accent);
-    border-radius: 6px;
-    letter-spacing: 0.02em;
-}
-
-.brand-text .subtag {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.mc-tag {
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .header-actions {
@@ -316,12 +329,50 @@ body {
 }
 
 /* ===================================================
+   Official Minimal Creates Tagline Bar
+   =================================================== */
+.mc-official-bar {
+    background: var(--mc-bar-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 7px 20px;
+    font-size: 0.76rem;
+    color: var(--mc-bar-text);
+    transition: all 0.25s ease;
+}
+
+.mc-bar-container {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.mc-verified-tag {
+    font-weight: 700;
+    color: var(--mc-bar-accent);
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mc-bar-bullet {
+    color: var(--text-dim);
+}
+
+.mc-bar-desc {
+    color: var(--mc-bar-text);
+}
+
+/* ===================================================
    Main Content Layout
    =================================================== */
 .main-wrapper {
     flex: 1;
     padding: 24px 16px 40px;
-    max-width: 680px;
+    max-width: 720px;
     width: 100%;
     margin: 0 auto;
 }
@@ -333,6 +384,64 @@ body {
     box-shadow: var(--shadow-lg);
     overflow: hidden;
     transition: all 0.25s ease;
+}
+
+/* Prominent Calculator Header Branding */
+.calc-brand-header {
+    text-align: center;
+    padding: 4px 0 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.calc-brand-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--mc-brand-bg);
+    border: 1px solid var(--mc-brand-border);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #ffffff;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.calc-mc-cube-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+}
+
+.calc-brand-title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.calc-currency-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    background: var(--bg-accent-subtle);
+    color: var(--accent);
+    border: 1px solid var(--border-accent);
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+}
+
+.calc-brand-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
 }
 
 /* ===================================================
@@ -985,7 +1094,7 @@ details[open] .arrow-icon {
    Official Minimal Creates Footer
    =================================================== */
 .app-footer {
-    padding: 28px 20px 36px;
+    padding: 36px 20px 44px;
     background: var(--bg-surface);
     border-top: 1px solid var(--border);
     margin-top: auto;
@@ -994,33 +1103,60 @@ details[open] .arrow-icon {
 }
 
 .footer-inner {
-    max-width: 600px;
+    max-width: 640px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 
-.footer-brand {
+.footer-mc-brand-wrap {
     margin-bottom: 2px;
 }
 
-.mc-footer-logo {
-    height: 32px;
-    width: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-    border-radius: 4px;
+.footer-mc-logo-link {
+    display: inline-block;
+    background: var(--mc-brand-bg);
+    border: 1px solid var(--mc-brand-border);
+    border-radius: 12px;
+    padding: 8px 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-[data-theme="light"] .mc-footer-logo {
-    /* Subtle border in light mode if dark background */
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+.footer-mc-logo-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+
+.mc-footer-logo-large {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.footer-brand-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mc-footer-tagline {
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: var(--text-main);
+}
+
+.mc-footer-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
 }
 
 .trademark-notice {
-    font-size: 0.82rem;
+    font-size: 0.85rem;
     font-weight: 500;
     color: var(--text-main);
 }
@@ -1044,17 +1180,17 @@ details[open] .arrow-icon {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 2px 8px;
+    padding: 3px 10px;
     background: var(--bg-input);
     border: 1px solid var(--border);
     border-radius: 12px;
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     color: var(--text-muted);
 }
 
 #cacheStatusPill i {
-    color: var(--green);
-    font-size: 0.7rem;
+    color: var(--primary);
+    font-size: 0.72rem;
 }
 
 .btn-text-link {
@@ -1082,10 +1218,10 @@ details[open] .arrow-icon {
     left: 50%;
     transform: translateX(-50%) translateY(120px);
     width: calc(100% - 32px);
-    max-width: 580px;
+    max-width: 600px;
     background: var(--bg-surface);
     border: 1px solid var(--border-strong);
-    padding: 12px 16px;
+    padding: 14px 18px;
     border-radius: 14px;
     box-shadow: var(--shadow-xl);
     z-index: 1000;
@@ -1105,15 +1241,15 @@ details[open] .arrow-icon {
 .cookie-content {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.78rem;
+    gap: 12px;
+    font-size: 0.8rem;
     color: var(--text-muted);
-    line-height: 1.35;
+    line-height: 1.4;
 }
 
-.cookie-icon {
-    font-size: 1.15rem;
-    color: var(--gold);
+.cookie-mc-icon {
+    font-size: 1.3rem;
+    color: var(--primary);
     flex-shrink: 0;
 }
 
@@ -1121,9 +1257,9 @@ details[open] .arrow-icon {
     background: var(--primary);
     color: #ffffff;
     border: none;
-    padding: 6px 14px;
+    padding: 7px 16px;
     border-radius: 8px;
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
@@ -1170,7 +1306,7 @@ details[open] .arrow-icon {
 /* ===================================================
    Mobile Adjustments
    =================================================== */
-@media (max-width: 580px) {
+@media (max-width: 640px) {
     .main-wrapper {
         padding: 14px 10px 30px;
     }
@@ -1197,6 +1333,19 @@ details[open] .arrow-icon {
 
     .card-actions {
         flex-direction: column;
+    }
+
+    .mc-brand-logo {
+        height: 24px;
+    }
+
+    .mc-logo-badge {
+        height: 36px;
+        padding: 3px 8px;
+    }
+
+    .product-title {
+        font-size: 0.95rem;
     }
 
     .cookie-banner {
