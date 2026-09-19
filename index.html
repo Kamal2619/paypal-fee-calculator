@@ -3,8 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PayPal Fee Calculator — USD to INR (Personal Tool)</title>
-    <meta name="description" content="Personal PayPal fee and invoice calculator for USD to INR transactions. See exact deductions including PayPal fee, GST, and currency markup.">
+    <title>PayCalc™ — PayPal Fee & Invoice Calculator | Minimal Creates</title>
+    
+    <!-- Meta & Trademarks -->
+    <meta name="description" content="Official PayCalc™ by Minimal Creates. Calculate exact PayPal USD to INR deductions, GST, FX spread, and client reverse invoice amounts.">
+    <meta name="author" content="Minimal Creates">
+    <meta name="copyright" content="Minimal Creates">
+    <meta name="application-name" content="PayCalc™ by Minimal Creates">
+    <meta name="theme-color" content="#0b0f17">
+    
+    <!-- Favicon & PWA -->
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/mc-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/mc-icon.png">
+    <link rel="apple-touch-icon" href="assets/mc-icon.png">
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kamal2619.github.io/paypal-fee-calculator/">
+    <meta property="og:title" content="PayCalc™ — Product of Minimal Creates">
+    <meta property="og:description" content="Fast, accurate PayPal USD to INR fee and invoice calculator. Official product of Minimal Creates.">
+    <meta property="og:image" content="assets/mc-logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="PayCalc™ — Product of Minimal Creates">
+    <meta property="twitter:description" content="Fast, accurate PayPal USD to INR fee and invoice calculator. Official product of Minimal Creates.">
+    <meta property="twitter:image" content="assets/mc-logo.png">
+
+    <!-- Structured Data / JSON-LD -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "PayCalc™",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "All",
+      "author": {
+        "@type": "Organization",
+        "name": "Minimal Creates",
+        "url": "https://github.com/Kamal2619"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Minimal Creates"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Official PayPal Fee & Reverse Invoice Calculator by Minimal Creates."
+    }
+    </script>
+
+    <!-- Fonts & Styles -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,21 +66,23 @@
 </head>
 <body>
 
-    <!-- Minimal Header -->
+    <!-- Minimal Header with MC Branding -->
     <header class="app-header">
         <div class="header-container">
             <div class="brand">
-                <div class="brand-badge"><i class="fab fa-paypal"></i></div>
+                <div class="brand-badge-mc" title="Minimal Creates">
+                    <img src="assets/mc-icon.png" alt="Minimal Creates Logo" class="mc-icon-img" onerror="this.style.display='none'">
+                </div>
                 <div class="brand-text">
-                    <h1>PayCalc <span class="tag">USD ⇄ INR</span></h1>
-                    <span class="subtag">Personal Fee & Invoice Tool</span>
+                    <h1>PayCalc<span class="tm">™</span> <span class="tag">USD ⇄ INR</span></h1>
+                    <span class="subtag"><span class="mc-tag">Product of Minimal Creates</span></span>
                 </div>
             </div>
             <div class="header-actions">
                 <div class="rate-badge" id="rateBadge" title="Click to adjust exchange rate" onclick="toggleRateSettings()">
                     <i class="fas fa-chart-line"></i>
                     <span id="headerRateText">1 USD = ₹--.--</span>
-                    <button class="icon-btn-small" onclick="event.stopPropagation(); fetchExchangeRate();" title="Refresh live rate">
+                    <button class="icon-btn-small" onclick="event.stopPropagation(); fetchExchangeRate(true);" title="Refresh live rate">
                         <i class="fas fa-sync-alt" id="syncIcon"></i>
                     </button>
                 </div>
@@ -276,10 +331,34 @@
         </div>
     </main>
 
-    <!-- Simple Minimal Footer -->
+    <!-- Professional Trademarked Footer -->
     <footer class="app-footer">
-        <p>Personal Tool • PayPal USD to INR Calculator • Rates updated in real-time</p>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <img src="assets/mc-logo.png" alt="Minimal Creates" class="mc-footer-logo" onerror="this.style.display='none'">
+            </div>
+            <p class="trademark-notice">
+                <strong>PayCalc™</strong> is an official utility product developed by <strong>Minimal Creates</strong>.
+            </p>
+            <p class="legal-notice">
+                © 2024–2026 Minimal Creates™. All rights reserved. PayPal™ is a trademark of PayPal, Inc., registered in the U.S. and other countries.
+            </p>
+            <div class="cache-badge">
+                <span id="cacheStatusPill"><i class="fas fa-database"></i> Smart Cache Active</span>
+                <span class="bullet">•</span>
+                <button class="btn-text-link" onclick="clearAllCache()" title="Clear cache & stored preferences">Purge Cache</button>
+            </div>
+        </div>
     </footer>
+
+    <!-- Cookie & Cache Consent Floating Banner -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <i class="fas fa-cookie-bite cookie-icon"></i>
+            <span>Minimal Creates uses essential storage & cookies to preserve your theme, exchange rate cache, and calculation preferences.</span>
+        </div>
+        <button class="cookie-accept-btn" onclick="acceptCookies()">Got It</button>
+    </div>
 
     <!-- Toast Notification -->
     <div class="toast" id="toast">Copied to clipboard!</div>

@@ -1,7 +1,7 @@
 // ===================================================
-// PayPal Fee Calculator — Personal Tool Logic
+// PayCalc™ by Minimal Creates — Official Script
 // Dual Mode (Forward USD to INR & Reverse Invoice)
-// Dark / Light Theme, Live Rate & Clipboard Actions
+// Cookie & Cache Manager, Live Rate, Theme & Service Worker
 // ===================================================
 
 let baseExchangeRate = 86.20;
@@ -26,10 +26,72 @@ const PRESETS = {
 };
 
 // ===================================================
+// Cookie & Cache Utilities (Minimal Creates Standard)
+// ===================================================
+const CookieManager = {
+    set(name, value, days = 365) {
+        const d = new Date();
+        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+        document.cookie = `${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/;SameSite=Lax`;
+    },
+    get(name) {
+        const nameEQ = `${name}=`;
+        const ca = document.cookie.split(';');
+        for (let i = 0; i < ca.length; i++) {
+            let c = ca[i].trim();
+            if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length));
+        }
+        return null;
+    },
+    erase(name) {
+        document.cookie = `${name}=; Max-Age=-99999999; path=/;`;
+    }
+};
+
+const CacheManager = {
+    CACHE_KEY: 'mc_paycalc_rate_cache_v2',
+    TTL: 6 * 60 * 60 * 1000, // 6 Hours
+
+    getRate() {
+        try {
+            const raw = localStorage.getItem(this.CACHE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (Date.now() - parsed.timestamp < this.TTL && parsed.rate > 0) {
+                return parsed.rate;
+            }
+        } catch {
+            return null;
+        }
+        return null;
+    },
+
+    saveRate(rate) {
+        try {
+            localStorage.setItem(this.CACHE_KEY, JSON.stringify({
+                rate: rate,
+                timestamp: Date.now()
+            }));
+            CookieManager.set('mc_last_rate', rate.toFixed(2), 30);
+        } catch (e) {
+            console.warn('Storage unavailable:', e);
+        }
+    },
+
+    clearAll() {
+        localStorage.removeItem(this.CACHE_KEY);
+        localStorage.removeItem('paycalc_theme');
+        CookieManager.erase('mc_last_rate');
+        CookieManager.erase('mc_theme');
+        CookieManager.erase('mc_calc_mode');
+    }
+};
+
+// ===================================================
 // Theme Management
 // ===================================================
 function initTheme() {
-    const saved = localStorage.getItem('paycalc_theme');
+    const saved = localStorage.getItem('paycalc_theme') || CookieManager.get('mc_theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const theme = saved || (prefersDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
@@ -40,21 +102,36 @@ function toggleTheme() {
     const next = current === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('paycalc_theme', next);
+    CookieManager.set('mc_theme', next, 365);
 }
 
 // ===================================================
 // Exchange Rate Management
 // ===================================================
-async function fetchExchangeRate() {
+async function fetchExchangeRate(forceRefresh = false) {
     const syncIcon = document.getElementById('syncIcon');
     if (syncIcon) syncIcon.classList.add('spin');
 
+    // 1. Check Cache first unless force-refreshed
+    if (!forceRefresh) {
+        const cached = CacheManager.getRate();
+        if (cached) {
+            baseExchangeRate = cached;
+            updateRateDisplay();
+            if (syncIcon) setTimeout(() => syncIcon.classList.remove('spin'), 300);
+            return;
+        }
+    }
+
+    // 2. Fetch live rate
     try {
         const res = await fetch('https://open.er-api.com/v6/latest/USD');
         const data = await res.json();
         if (data?.result === 'success' && data.rates?.INR) {
             baseExchangeRate = parseFloat(data.rates.INR.toFixed(2));
+            CacheManager.saveRate(baseExchangeRate);
             updateRateDisplay();
+            if (forceRefresh) showToast(`Live rate refreshed: ₹${baseExchangeRate.toFixed(2)}`);
         }
     } catch (e) {
         try {
@@ -62,10 +139,13 @@ async function fetchExchangeRate() {
             const data2 = await res2.json();
             if (data2?.rates?.INR) {
                 baseExchangeRate = parseFloat(data2.rates.INR.toFixed(2));
+                CacheManager.saveRate(baseExchangeRate);
                 updateRateDisplay();
+                if (forceRefresh) showToast(`Live rate refreshed: ₹${baseExchangeRate.toFixed(2)}`);
             }
         } catch {
             console.log('Using default exchange rate:', baseExchangeRate);
+            if (forceRefresh) showToast(`Using fallback rate: ₹${baseExchangeRate.toFixed(2)}`);
         }
     } finally {
         if (syncIcon) {
@@ -114,6 +194,8 @@ function updateCustomRate() {
 // ===================================================
 function switchMode(mode) {
     currentMode = mode;
+    CookieManager.set('mc_calc_mode', mode, 30);
+
     const tabForward = document.getElementById('tabForward');
     const tabReverse = document.getElementById('tabReverse');
     const inputLabel = document.getElementById('inputLabel');
@@ -336,7 +418,7 @@ function copyInvoiceText() {
     const reqUSD = document.getElementById('revRequiredUSD').textContent;
     const target = document.getElementById('revTargetDisplay').textContent;
 
-    const note = `Hi,\n\nTo ensure the exact net amount (${target}) is received after international PayPal fees (4.4% + $0.30 fixed fee, 18% GST, and currency conversion spread), the total invoice amount is ${reqUSD}.\n\nThank you!`;
+    const note = `Hi,\n\nTo ensure the exact net amount (${target}) is received after international PayPal fees (4.4% + $0.30 fixed fee, 18% GST, and currency conversion spread), the total invoice amount is ${reqUSD}.\n\nThank you!\n— Minimal Creates PayCalc™`;
 
     navigator.clipboard.writeText(note).then(() => {
         showToast('Client invoice note copied!');
@@ -356,7 +438,7 @@ function copyBreakdown(mode) {
         const deposit = document.getElementById('resFinalDeposit').textContent;
         const loss = document.getElementById('resTotalLoss').textContent;
 
-        text = `PayPal Fee Breakdown (USD to INR):\n` +
+        text = `PayPal Fee Breakdown (USD to INR) — Minimal Creates PayCalc™:\n` +
                `• Amount Sent: ${sent}\n` +
                `• PayPal Fee: ${fee}\n` +
                `• Indian GST (18%): ${gst}\n` +
@@ -372,7 +454,7 @@ function copyBreakdown(mode) {
         const netUSD = document.getElementById('revNetUSD').textContent;
         const deposit = document.getElementById('revFinalBank').textContent;
 
-        text = `PayPal Reverse Invoice Breakdown:\n` +
+        text = `PayPal Reverse Invoice Breakdown — Minimal Creates PayCalc™:\n` +
                `• Ask Client to Send: ${invoiced}\n` +
                `• Target Net Amount: ${target}\n` +
                `• PayPal Fee: ${fee}\n` +
@@ -407,6 +489,30 @@ function showToast(msg) {
 }
 
 // ===================================================
+// Cookie & Cache Consent Management
+// ===================================================
+function initCookieConsent() {
+    const consented = CookieManager.get('mc_cookie_consent');
+    const banner = document.getElementById('cookieBanner');
+    if (!consented && banner) {
+        setTimeout(() => banner.classList.add('show'), 1200);
+    }
+}
+
+function acceptCookies() {
+    CookieManager.set('mc_cookie_consent', 'true', 365);
+    const banner = document.getElementById('cookieBanner');
+    if (banner) banner.classList.remove('show');
+    showToast('Preferences & local cache enabled');
+}
+
+function clearAllCache() {
+    CacheManager.clearAll();
+    showToast('Local cache & cookies purged. Reloading...');
+    setTimeout(() => window.location.reload(), 1000);
+}
+
+// ===================================================
 // Helper Utilities
 // ===================================================
 function setEl(id, text) {
@@ -431,12 +537,28 @@ function fmtNum(n, decimals = 2) {
     return intPart + decPart;
 }
 
+// Register Service Worker for offline PWA capabilities
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.log('SW registration note:', err);
+        });
+    }
+}
+
 // ===================================================
 // Initialization & Event Listeners
 // ===================================================
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
+    initCookieConsent();
+    registerServiceWorker();
     renderPresets();
+
+    const savedMode = CookieManager.get('mc_calc_mode');
+    if (savedMode === 'reverse') {
+        switchMode('reverse');
+    }
 
     const input = document.getElementById('amountInput');
     if (input) {

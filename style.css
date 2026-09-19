@@ -1,5 +1,5 @@
 /* ===================================================
-   PayPal Fee Calculator — Personal Tool Design System
+   PayCalc™ by Minimal Creates — Official Design System
    Neat, Simple, Professional with Light & Dark Modes
    =================================================== */
 
@@ -33,6 +33,9 @@
     --red: #ef4444;
     --green: #10b981;
     --gold: #f59e0b;
+
+    --mc-brand-bg: #000000;
+    --mc-brand-border: #000000;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -73,6 +76,9 @@
     --green: #34d399;
     --gold: #fbbf24;
 
+    --mc-brand-bg: #000000;
+    --mc-brand-border: #334155;
+
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
     --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
@@ -109,7 +115,7 @@ body {
 .app-header {
     background: var(--bg-surface);
     border-bottom: 1px solid var(--border);
-    padding: 14px 20px;
+    padding: 12px 20px;
     position: sticky;
     top: 0;
     z-index: 50;
@@ -130,27 +136,45 @@ body {
     gap: 12px;
 }
 
-.brand-badge {
+/* MC Brand Badge */
+.brand-badge-mc {
     width: 38px;
     height: 38px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #003087, #0079c1);
+    border-radius: 9px;
+    background: var(--mc-brand-bg);
+    border: 1px solid var(--mc-brand-border);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
-    font-size: 1.25rem;
-    box-shadow: 0 2px 8px rgba(0, 121, 193, 0.3);
+    padding: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.mc-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .brand-text h1 {
     font-size: 1.15rem;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--text-main);
     display: flex;
     align-items: center;
     gap: 8px;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.brand-text .tm {
+    font-size: 0.65rem;
+    vertical-align: super;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-left: -4px;
 }
 
 .brand-text .tag {
@@ -167,8 +191,16 @@ body {
 .brand-text .subtag {
     font-size: 0.75rem;
     color: var(--text-muted);
-    display: block;
-    line-height: 1.1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mc-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
 }
 
 .header-actions {
@@ -950,14 +982,157 @@ details[open] .arrow-icon {
 }
 
 /* ===================================================
-   Footer
+   Official Minimal Creates Footer
    =================================================== */
 .app-footer {
+    padding: 28px 20px 36px;
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    margin-top: auto;
     text-align: center;
-    padding: 16px 20px;
+    transition: all 0.25s ease;
+}
+
+.footer-inner {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.footer-brand {
+    margin-bottom: 2px;
+}
+
+.mc-footer-logo {
+    height: 32px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    border-radius: 4px;
+}
+
+[data-theme="light"] .mc-footer-logo {
+    /* Subtle border in light mode if dark background */
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+.trademark-notice {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.legal-notice {
+    font-size: 0.74rem;
+    color: var(--text-dim);
+    line-height: 1.4;
+}
+
+.cache-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 0.75rem;
     color: var(--text-dim);
-    margin-top: auto;
+    margin-top: 4px;
+}
+
+#cacheStatusPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+#cacheStatusPill i {
+    color: var(--green);
+    font-size: 0.7rem;
+}
+
+.btn-text-link {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    font-family: inherit;
+    padding: 0;
+}
+
+.btn-text-link:hover {
+    color: var(--primary-hover);
+}
+
+/* ===================================================
+   Cookie & Cache Consent Banner
+   =================================================== */
+.cookie-banner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(120px);
+    width: calc(100% - 32px);
+    max-width: 580px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    padding: 12px 16px;
+    border-radius: 14px;
+    box-shadow: var(--shadow-xl);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cookie-banner.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.cookie-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+}
+
+.cookie-icon {
+    font-size: 1.15rem;
+    color: var(--gold);
+    flex-shrink: 0;
+}
+
+.cookie-accept-btn {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: filter 0.15s ease;
+    font-family: inherit;
+}
+
+.cookie-accept-btn:hover {
+    filter: brightness(1.1);
 }
 
 /* ===================================================
@@ -975,7 +1150,7 @@ details[open] .arrow-icon {
     font-size: 0.85rem;
     font-weight: 600;
     box-shadow: var(--shadow-xl);
-    z-index: 100;
+    z-index: 1001;
     opacity: 0;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
@@ -1022,5 +1197,12 @@ details[open] .arrow-icon {
 
     .card-actions {
         flex-direction: column;
+    }
+
+    .cookie-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        text-align: left;
     }
 }
