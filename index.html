@@ -76,15 +76,29 @@
                         <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" alt="PayPal" class="paypal-logo" onerror="this.style.display='none'">
                         <h1>PayPal Fee Conversion Calculator <span class="usd-inr-badge">USD to INR</span></h1>
                     </div>
-                    <p class="calc-subtitle">Calculate exactly how much INR you'll receive after all PayPal deductions, GST, and bank withdrawal charges.</p>
+                    <p class="calc-subtitle">Calculate exactly how much INR you'll receive — or how much USD to invoice your client to get the exact INR you need.</p>
                 </div>
 
                 <div class="calculator-body">
+                    <!-- Mode Toggle -->
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" id="modeForward" onclick="switchMode('forward')">
+                            <i class="fas fa-arrow-right"></i>
+                            <span class="mode-label">I received USD</span>
+                            <span class="mode-desc">How much INR will I get?</span>
+                        </button>
+                        <button class="mode-btn" id="modeReverse" onclick="switchMode('reverse')">
+                            <i class="fas fa-arrow-left"></i>
+                            <span class="mode-label">I need ₹ INR</span>
+                            <span class="mode-desc">How much USD should I ask?</span>
+                        </button>
+                    </div>
+
                     <div class="input-group">
                         <div class="input-wrapper">
-                            <label for="amountInput">Enter amount (in $):</label>
+                            <label for="amountInput" id="inputLabel">Enter amount (in $):</label>
                             <div class="input-field-wrap">
-                                <span class="input-prefix">$</span>
+                                <span class="input-prefix" id="inputPrefix">$</span>
                                 <input type="number" id="amountInput" placeholder="Enter amount (in $):" min="0" step="0.01">
                             </div>
                         </div>
@@ -97,7 +111,7 @@
                         <i class="fas fa-sync-alt"></i> <span id="rateStatusText">Fetching live exchange rate...</span>
                     </div>
 
-                    <!-- Results Section -->
+                    <!-- Forward Results Section -->
                     <div class="results-section" id="resultsSection">
                         <div class="results-header">
                             <h3><i class="fas fa-receipt"></i> Fee Breakdown</h3>
@@ -145,6 +159,64 @@
                         </div>
                         <div class="results-note">
                             <i class="fas fa-info-circle"></i> Rates are indicative. Actual amounts may vary slightly based on PayPal's real-time conversion rates and your bank's processing.
+                        </div>
+                    </div>
+
+                    <!-- Reverse Results Section -->
+                    <div class="results-section" id="reverseResultsSection">
+                        <div class="results-header reverse-header">
+                            <h3><i class="fas fa-bullseye"></i> Invoice Amount Calculator</h3>
+                            <span class="results-timestamp" id="reverseTimestamp"></span>
+                        </div>
+                        <div class="results-grid">
+                            <div class="result-row total reverse-highlight">
+                                <span class="result-label"><i class="fas fa-hand-holding-usd"></i> Ask Your Client to Send</span>
+                                <span class="result-value" id="revRequiredUSD"></span>
+                            </div>
+                            <div class="result-divider"></div>
+                            <div class="result-row">
+                                <span class="result-label">Desired Amount in Your Bank</span>
+                                <span class="result-value positive" id="revDesiredINR"></span>
+                            </div>
+                            <div class="result-divider"></div>
+                            <p class="reverse-breakdown-title"><i class="fas fa-search-dollar"></i> Here's how the fees eat into it:</p>
+                            <div class="result-row deduction">
+                                <span class="result-label">PayPal Fee (4.4% + $0.30)</span>
+                                <span class="result-value negative" id="revPaypalFee"></span>
+                            </div>
+                            <div class="result-row deduction">
+                                <span class="result-label">GST (18% on PayPal fee)</span>
+                                <span class="result-value negative" id="revGST"></span>
+                            </div>
+                            <div class="result-row subtotal">
+                                <span class="result-label">Net USD After Deductions</span>
+                                <span class="result-value" id="revNetUSD"></span>
+                            </div>
+                            <div class="result-divider"></div>
+                            <div class="result-row">
+                                <span class="result-label">Google/Market Exchange Rate</span>
+                                <span class="result-value" id="revBaseRate"></span>
+                            </div>
+                            <div class="result-row deduction">
+                                <span class="result-label">PayPal FX Markup (3.8%)</span>
+                                <span class="result-value negative" id="revFxMarkup"></span>
+                            </div>
+                            <div class="result-row">
+                                <span class="result-label">Effective Exchange Rate</span>
+                                <span class="result-value" id="revEffectiveRate"></span>
+                            </div>
+                            <div class="result-divider"></div>
+                            <div class="result-row">
+                                <span class="result-label">Total Hidden Charges</span>
+                                <span class="result-value negative" id="revTotalCharges"></span>
+                            </div>
+                            <div class="result-row loss-row">
+                                <span class="result-label">Total Loss as % of Invoice</span>
+                                <span class="result-value negative" id="revLossPercent"></span>
+                            </div>
+                        </div>
+                        <div class="results-note reverse-note">
+                            <i class="fas fa-lightbulb"></i> <strong>Tip:</strong> Share this breakdown with your client so they understand why you need to invoice a higher amount to receive the agreed-upon INR.
                         </div>
                     </div>
                 </div>

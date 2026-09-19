@@ -275,6 +275,126 @@ body {
     padding: 50px 0 60px;
 }
 
+/* Mode Toggle */
+.mode-toggle {
+    display: flex;
+    gap: 12px;
+    max-width: 750px;
+    margin: 0 auto 28px;
+}
+
+.mode-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 18px 16px;
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--bg-light);
+    cursor: pointer;
+    font-family: var(--font);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.mode-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+    transition: var(--transition);
+}
+
+.mode-btn i {
+    font-size: 1.2rem;
+    color: var(--text-light);
+    transition: var(--transition);
+}
+
+.mode-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-medium);
+    transition: var(--transition);
+}
+
+.mode-desc {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    transition: var(--transition);
+}
+
+.mode-btn:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+.mode-btn.active {
+    border-color: var(--primary);
+    background: linear-gradient(145deg, #e8fafa, #d4f1ef);
+    box-shadow: 0 2px 12px rgba(26, 156, 160, 0.15);
+}
+
+.mode-btn.active::before {
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+}
+
+.mode-btn.active i {
+    color: var(--primary-dark);
+}
+
+.mode-btn.active .mode-label {
+    color: var(--primary-dark);
+}
+
+.mode-btn.active .mode-desc {
+    color: var(--primary);
+}
+
+/* Reverse Results Specific */
+.reverse-header {
+    background: linear-gradient(135deg, #e67e22, #d35400) !important;
+}
+
+.reverse-highlight {
+    border-color: #e67e22 !important;
+    background: linear-gradient(135deg, #fdf2e9, #fdebd0) !important;
+}
+
+.reverse-highlight .result-value {
+    color: #d35400 !important;
+    font-size: 1.4rem !important;
+}
+
+.reverse-breakdown-title {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-medium);
+    padding: 12px 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.reverse-breakdown-title i {
+    color: var(--accent-gold);
+}
+
+.reverse-note {
+    background: rgba(230, 126, 34, 0.06) !important;
+}
+
+.reverse-note i {
+    color: #e67e22 !important;
+}
+
+
 .calculator-card {
     background: var(--bg-white);
     border-radius: var(--radius-lg);
@@ -1116,6 +1236,22 @@ body {
     .input-group {
         flex-direction: column;
     }
+
+    .mode-toggle {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .mode-btn {
+        padding: 14px 16px;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .mode-btn i {
+        font-size: 1rem;
+    }
+
 
     .btn-calculate {
         width: 100%;
