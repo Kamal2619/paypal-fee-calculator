@@ -1,13 +1,13 @@
-// Service Worker for PayCalc™ by Minimal Creates
-const CACHE_NAME = 'paycalc-mc-v1.0';
+// Service Worker for MinimalFee™ by Minimal Creates
+const CACHE_NAME = 'minimalfee-mc-v1.1';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/manifest.json',
-  '/assets/mc-icon.png',
-  '/assets/mc-logo.png'
+  './',
+  './index.html',
+  './style.css',
+  './script.js',
+  './manifest.json',
+  './assets/mc-icon.png',
+  './assets/mc-logo.png'
 ];
 
 self.addEventListener('install', event => {
