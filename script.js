@@ -4,11 +4,17 @@
 // Dynamic Market Rate Sync & Exact Decimal Financial Precision
 // ===================================================
 
+// Defaults & Financial Constants
+const DEFAULT_FX_MARKUP = 3.80; // Established median between PayPal's 3.00% and 4.50% retail FX spread
+const DEFAULT_24H_BUFFER = 0.85; // Morally balanced 99th percentile 24h bank auto-withdrawal volatility buffer
+
 let baseExchangeRate = 96.10;
-let fxMarkupPercent = 3.80;
+let fxMarkupPercent = DEFAULT_FX_MARKUP;
+let buffer24hPercent = DEFAULT_24H_BUFFER;
 let directEffectiveRate = null; // When user specifies exact conversion rate from statement
 let currentMode = 'forward'; // 'forward' | 'reverse'
 let reverseTargetType = 'inr'; // 'inr' | 'usd'
+let selectedInvoiceOption = 'protected'; // 'protected' | 'standard'
 
 // Official PayPal India Fee Constants
 const PAYPAL_FEE_PERCENT = 0.044; // 4.40%
@@ -164,34 +170,58 @@ async function fetchExchangeRate(forceRefresh = false) {
     }
 }
 
+// Effective rate applied by PayPal
 function getEffectiveRate() {
     if (directEffectiveRate !== null && directEffectiveRate > 0) {
         return directEffectiveRate;
     }
-    return baseExchangeRate * (1 - (fxMarkupPercent / 100));
+    // Intelligent median fallback: if user leaves spread blank or unknown, use DEFAULT_FX_MARKUP (3.80%)
+    const markup = (isNaN(fxMarkupPercent) || fxMarkupPercent < 0) ? DEFAULT_FX_MARKUP : fxMarkupPercent;
+    return baseExchangeRate * (1 - (markup / 100));
+}
+
+// Protected rate for 24h bank holding delay (with volatility buffer)
+function getProtectedRate() {
+    const eff = getEffectiveRate();
+    const buffer = (isNaN(buffer24hPercent) || buffer24hPercent < 0) ? DEFAULT_24H_BUFFER : buffer24hPercent;
+    return eff * (1 - (buffer / 100));
 }
 
 function updateRateDisplay() {
     const headerRate = document.getElementById('headerRateText');
     const customRateInput = document.getElementById('customBaseRate');
     const customMarkupInput = document.getElementById('customFxMarkup');
+    const customBufferInput = document.getElementById('custom24hBuffer');
     const previewEffective = document.getElementById('previewEffectiveRate');
+    const previewProtected = document.getElementById('previewProtectedRate');
     const directRateInput = document.getElementById('customDirectEffectiveRate');
+    const cardBufferText = document.getElementById('cardBufferText');
 
     const eff = getEffectiveRate();
+    const prot = getProtectedRate();
 
     if (headerRate) headerRate.textContent = `1 USD = ₹${eff.toFixed(2)}`;
     if (customRateInput && document.activeElement !== customRateInput) {
         customRateInput.value = baseExchangeRate.toFixed(2);
     }
     if (customMarkupInput && document.activeElement !== customMarkupInput) {
-        customMarkupInput.value = fxMarkupPercent.toFixed(2);
+        customMarkupInput.value = isNaN(fxMarkupPercent) ? '' : fxMarkupPercent.toFixed(2);
+    }
+    if (customBufferInput && document.activeElement !== customBufferInput) {
+        customBufferInput.value = isNaN(buffer24hPercent) ? '' : buffer24hPercent.toFixed(2);
     }
     if (previewEffective) {
-        previewEffective.textContent = `₹${eff.toFixed(4)}/USD`;
+        const isAutoMedian = isNaN(fxMarkupPercent) || fxMarkupPercent === DEFAULT_FX_MARKUP;
+        previewEffective.textContent = `₹${eff.toFixed(4)}/USD${isAutoMedian ? ' (Auto 3.8%)' : ''}`;
+    }
+    if (previewProtected) {
+        previewProtected.textContent = `₹${prot.toFixed(4)}/USD`;
     }
     if (directRateInput && document.activeElement !== directRateInput && directEffectiveRate !== null) {
         directRateInput.value = directEffectiveRate;
+    }
+    if (cardBufferText) {
+        cardBufferText.textContent = `${(isNaN(buffer24hPercent) ? DEFAULT_24H_BUFFER : buffer24hPercent).toFixed(2)}% buffer`;
     }
 
     calculate();
@@ -202,9 +232,27 @@ function toggleRateSettings() {
     panel.classList.toggle('open');
 }
 
+function setBufferPreset(val) {
+    buffer24hPercent = parseFloat(val);
+    const input = document.getElementById('custom24hBuffer');
+    if (input) input.value = buffer24hPercent.toFixed(2);
+
+    const chips = document.querySelectorAll('.buffer-chip');
+    chips.forEach(chip => {
+        const text = chip.textContent;
+        const matches = (val === 0.50 && text.includes('0.5')) ||
+                        (val === 0.85 && text.includes('0.85')) ||
+                        (val === 1.25 && text.includes('1.25'));
+        chip.classList.toggle('active', matches);
+    });
+
+    updateRateDisplay();
+}
+
 function updateCustomRate(source) {
     const rateInput = document.getElementById('customBaseRate');
     const markupInput = document.getElementById('customFxMarkup');
+    const bufferInput = document.getElementById('custom24hBuffer');
     const directInput = document.getElementById('customDirectEffectiveRate');
 
     if (source === 'direct') {
@@ -219,16 +267,22 @@ function updateCustomRate(source) {
         } else {
             directEffectiveRate = null;
         }
+    } else if (source === 'buffer') {
+        const bVal = parseFloat(bufferInput.value);
+        // Intelligent fallback: if left empty, apply DEFAULT_24H_BUFFER (0.85%)
+        buffer24hPercent = isNaN(bVal) || bVal < 0 ? DEFAULT_24H_BUFFER : bVal;
+    } else if (source === 'markup') {
+        directEffectiveRate = null;
+        if (directInput && document.activeElement !== directInput) directInput.value = '';
+        
+        const mVal = parseFloat(markupInput.value);
+        // Intelligent median fallback: if user clears or doesn't know spread, take it into our hands and assign logical median
+        fxMarkupPercent = isNaN(mVal) || mVal < 0 ? DEFAULT_FX_MARKUP : mVal;
     } else {
         directEffectiveRate = null;
-        if (directInput && document.activeElement !== directInput) {
-            directInput.value = '';
-        }
+        if (directInput && document.activeElement !== directInput) directInput.value = '';
         const rateVal = parseFloat(rateInput.value);
-        const markupVal = parseFloat(markupInput.value);
-
         if (!isNaN(rateVal) && rateVal > 0) baseExchangeRate = rateVal;
-        if (!isNaN(markupVal) && markupVal >= 0) fxMarkupPercent = markupVal;
     }
 
     updateRateDisplay();
@@ -411,80 +465,219 @@ function calcForward(rawAmt) {
     setEl('resTotalLoss', `-₹${fmtNum(lossINR, 2)} (${lossPercent.toFixed(1)}%)`);
 }
 
-// Mode 2: Reverse Invoice -> Exact Invoice Amount Required for Zero Loss
+// Store active calculation results for both options
+let lastReverseResults = null;
+
+// Mode 2: Reverse Invoice -> Dual Options (Market Protected + 24h Buffer vs Standard Moral)
 function calcReverse(rawAmt) {
     const amt = isNaN(rawAmt) || rawAmt <= 0 ? 0 : rawAmt;
     const effRate = getEffectiveRate();
+    const protRate = getProtectedRate();
 
-    let targetINR = 0;
-    let targetDisplay = '';
-    let netNeededUSD = 0;
-    let reqUSD = 0;
-    let fee = 0;
-    let gst = 0;
-    let totalDeductionsUSD = 0;
-    let netUSD = 0;
-    let actualDepositedINR = 0;
-    let extraBilledUSD = 0;
-    let extraBilledINR = 0;
+    const results = {
+        targetDisplay: '',
+        targetGoal: '',
+        protected: { reqUSD: 0, fee: 0, gst: 0, netUSD: 0, finalBank: 0, bufferUSD: 0 },
+        standard: { reqUSD: 0, fee: 0, gst: 0, netUSD: 0, finalBank: 0, feeUSD: 0 }
+    };
 
     if (amt > 0) {
         if (reverseTargetType === 'inr') {
-            // Target is exact INR in Indian Bank (e.g. ₹4,509.85)
-            targetINR = amt;
-            targetDisplay = `₹${fmtNum(targetINR, 2)}`;
-            netNeededUSD = targetINR / effRate;
-            // Solve: netNeededUSD = reqUSD - (round2(reqUSD * 0.044 + 0.30) * 1.18)
-            reqUSD = round2((netNeededUSD + FIXED_DEDUCTION) / NET_FACTOR);
+            // User target: Exact INR in Indian Bank (e.g. ₹10,000)
+            const targetINR = amt;
+            results.targetGoal = `₹${fmtNum(targetINR, 2)}`;
+            results.targetDisplay = `₹${fmtNum(targetINR, 2)}`;
+
+            // --- Option 2: Standard Invoice (PayPal standard conversion rate) ---
+            const stdNetNeededUSD = targetINR / effRate;
+            const stdReqUSD = round2((stdNetNeededUSD + FIXED_DEDUCTION) / NET_FACTOR);
+            const stdFee = round2((stdReqUSD * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE);
+            const stdGST = round2(stdFee * GST_RATE);
+            const stdNetUSD = round2(stdReqUSD - (stdFee + stdGST));
+            const stdFinalBank = round2(stdNetUSD * effRate);
+            const stdFeeUSD = Math.max(0, round2(stdReqUSD - stdNetNeededUSD));
+
+            results.standard = {
+                reqUSD: stdReqUSD,
+                fee: stdFee,
+                gst: stdGST,
+                netUSD: stdNetUSD,
+                finalBank: stdFinalBank,
+                feeUSD: stdFeeUSD
+            };
+
+            // --- Option 1: Market Protected + 24h Volatility Buffer ---
+            const protNetNeededUSD = targetINR / protRate;
+            const protReqUSD = round2((protNetNeededUSD + FIXED_DEDUCTION) / NET_FACTOR);
+            const protFee = round2((protReqUSD * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE);
+            const protGST = round2(protFee * GST_RATE);
+            const protNetUSD = round2(protReqUSD - (protFee + protGST));
+            const protFinalBank = targetINR; // 100% Guaranteed payout even if rate dips overnight
+            const protBufferUSD = Math.max(0, round2(protReqUSD - stdReqUSD));
+
+            results.protected = {
+                reqUSD: protReqUSD,
+                fee: protFee,
+                gst: protGST,
+                netUSD: protNetUSD,
+                finalBank: protFinalBank,
+                bufferUSD: protBufferUSD
+            };
+
         } else {
-            // Target is exact USD net in hand (e.g. $48.78)
-            netNeededUSD = amt;
-            targetINR = round2(amt * effRate);
-            targetDisplay = `$${amt.toFixed(2)} (~₹${fmtNum(targetINR, 2)})`;
-            reqUSD = round2((amt + FIXED_DEDUCTION) / NET_FACTOR);
+            // User target: USD Net in Hand (e.g. $100 for a $100 project)
+            const realMarketINR = round2(amt * baseExchangeRate);
+            results.targetGoal = `$${amt.toFixed(2)}`;
+            results.targetDisplay = `$${amt.toFixed(2)} (₹${fmtNum(realMarketINR, 2)} market value)`;
+
+            // --- Option 2: Standard Client Terms (Standard fees covered; user absorbs standard FX spread) ---
+            const stdNetNeededUSD = amt;
+            const stdReqUSD = round2((stdNetNeededUSD + FIXED_DEDUCTION) / NET_FACTOR);
+            const stdFee = round2((stdReqUSD * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE);
+            const stdGST = round2(stdFee * GST_RATE);
+            const stdNetUSD = round2(stdReqUSD - (stdFee + stdGST));
+            const stdFinalBank = round2(stdNetUSD * effRate);
+            const stdFeeUSD = Math.max(0, round2(stdReqUSD - amt));
+
+            results.standard = {
+                reqUSD: stdReqUSD,
+                fee: stdFee,
+                gst: stdGST,
+                netUSD: stdNetUSD,
+                finalBank: stdFinalBank,
+                feeUSD: stdFeeUSD
+            };
+
+            // --- Option 1: Market Protected (Covers fees, PayPal FX spread & 24h buffer to guarantee full ₹ market value) ---
+            const protNetNeededUSD = realMarketINR / protRate;
+            const protReqUSD = round2((protNetNeededUSD + FIXED_DEDUCTION) / NET_FACTOR);
+            const protFee = round2((protReqUSD * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE);
+            const protGST = round2(protFee * GST_RATE);
+            const protNetUSD = round2(protReqUSD - (protFee + protGST));
+            const protFinalBank = realMarketINR; // 100% full real-world market rupee value preserved
+            const protBufferUSD = Math.max(0, round2(protReqUSD - stdReqUSD));
+
+            results.protected = {
+                reqUSD: protReqUSD,
+                fee: protFee,
+                gst: protGST,
+                netUSD: protNetUSD,
+                finalBank: protFinalBank,
+                bufferUSD: protBufferUSD
+            };
         }
-
-        // Forward verification on computed invoice
-        fee = round2((reqUSD * PAYPAL_FEE_PERCENT) + PAYPAL_FIXED_FEE);
-        gst = round2(fee * GST_RATE);
-        totalDeductionsUSD = round2(fee + gst);
-        netUSD = round2(reqUSD - totalDeductionsUSD);
-        actualDepositedINR = round2(netUSD * effRate);
-
-        extraBilledUSD = Math.max(0, round2(reqUSD - netNeededUSD));
-        extraBilledINR = round2(extraBilledUSD * effRate);
     }
 
-    setEl('revRequiredUSD', `$${reqUSD.toFixed(2)}`);
-    setEl('revTargetDisplay', targetDisplay);
-    setEl('revFeeNotice', '0% loss to you • All fees covered');
+    lastReverseResults = results;
 
-    setEl('revTargetGoal', targetDisplay);
-    setEl('revInvoicedGross', `$${reqUSD.toFixed(2)}`);
+    // 1. Update Header Badge
+    setEl('revTargetNotice', `Target: ${results.targetDisplay || '₹0.00'}`);
 
-    setEl('revPaypalFee', `-$${fee.toFixed(2)}`);
-    setEl('revGST', `-$${gst.toFixed(2)}`);
-    setEl('revNetUSD', `$${netUSD.toFixed(2)}`);
-    setEl('revEffectiveRate', `₹${effRate.toFixed(4)}`);
+    // 2. Update Card 1 (Protected Option)
+    setEl('optProtectedUSD', results.protected.reqUSD.toFixed(2));
+    setEl('optProtectedDeposit', `₹${fmtNum(results.protected.finalBank, 2)}`);
+    setEl('optProtectedBuffer', `+$${results.protected.bufferUSD.toFixed(2)} shield`);
+    setEl('cardBufferText', `${(isNaN(buffer24hPercent) ? DEFAULT_24H_BUFFER : buffer24hPercent).toFixed(2)}% buffer`);
 
-    setEl('revFinalBank', `₹${fmtNum(actualDepositedINR, 2)}`);
-    setEl('revExtraBilled', `+$${extraBilledUSD.toFixed(2)} (~₹${fmtNum(extraBilledINR, 2)})`);
+    // 3. Update Card 2 (Standard Option)
+    setEl('optStandardUSD', results.standard.reqUSD.toFixed(2));
+    setEl('optStandardDeposit', `₹${fmtNum(results.standard.finalBank, 2)}`);
+    setEl('optStandardFee', `+$${results.standard.feeUSD.toFixed(2)} fee`);
+
+    // 4. Update Detailed Breakdown based on currently selected option
+    updateSelectedBreakdown();
+}
+
+function selectInvoiceOption(type) {
+    selectedInvoiceOption = type;
+    const cardProt = document.getElementById('optCardProtected');
+    const cardStd = document.getElementById('optCardStandard');
+
+    if (cardProt) cardProt.classList.toggle('selected', type === 'protected');
+    if (cardStd) cardStd.classList.toggle('selected', type === 'standard');
+
+    const protLabel = cardProt?.querySelector('.opt-radio-label');
+    const stdLabel = cardStd?.querySelector('.opt-radio-label');
+    if (protLabel) protLabel.textContent = type === 'protected' ? 'Shield Active' : 'Select';
+    if (stdLabel) stdLabel.textContent = type === 'standard' ? 'Active' : 'Select';
+
+    updateSelectedBreakdown();
+}
+
+function updateSelectedBreakdown() {
+    if (!lastReverseResults) return;
+
+    const results = lastReverseResults;
+    const isProtected = selectedInvoiceOption === 'protected';
+    const activeData = isProtected ? results.protected : results.standard;
+    const effRate = getEffectiveRate();
+    const protRate = getProtectedRate();
+
+    // Update Summary Banner
+    const summaryText = document.getElementById('activeSummaryText');
+    if (summaryText) {
+        if (isProtected) {
+            summaryText.innerHTML = `Showing detailed ledger for <strong>Market Shield Invoice ($${activeData.reqUSD.toFixed(2)})</strong> — protects against PayPal spread & 24h bank delay.`;
+        } else {
+            summaryText.innerHTML = `Showing detailed ledger for <strong>Standard Client Invoice ($${activeData.reqUSD.toFixed(2)})</strong> — official PayPal fees only (moral standard).`;
+        }
+    }
+
+    // Update Breakdown Line Items
+    setEl('revTargetGoal', results.targetDisplay);
+    setEl('revInvoicedGross', `$${activeData.reqUSD.toFixed(2)}`);
+    setEl('revPaypalFee', `-$${activeData.fee.toFixed(2)}`);
+    setEl('revGST', `-$${activeData.gst.toFixed(2)}`);
+    setEl('revNetUSD', `$${activeData.netUSD.toFixed(2)}`);
+
+    const bufferRow = document.getElementById('revBufferRow');
+    if (isProtected) {
+        setEl('revEffectiveRate', `₹${protRate.toFixed(4)}/USD`);
+        if (bufferRow) {
+            bufferRow.style.display = 'flex';
+            setEl('revBufferApplied', `${(isNaN(buffer24hPercent) ? DEFAULT_24H_BUFFER : buffer24hPercent).toFixed(2)}% buffer included`);
+        }
+        setEl('revFinalBank', `₹${fmtNum(activeData.finalBank, 2)} (Guaranteed)`);
+        setEl('revExtraBilled', `+$${(activeData.reqUSD - (reverseTargetType === 'usd' ? parseFloat(document.getElementById('amountInput').value || 0) : (activeData.finalBank / effRate))).toFixed(2)}`);
+    } else {
+        setEl('revEffectiveRate', `₹${effRate.toFixed(4)}/USD`);
+        if (bufferRow) {
+            bufferRow.style.display = 'flex';
+            setEl('revBufferApplied', 'None (Standard terms)');
+        }
+        setEl('revFinalBank', `₹${fmtNum(activeData.finalBank, 2)}`);
+        setEl('revExtraBilled', `+$${activeData.feeUSD.toFixed(2)}`);
+    }
+
+    // Update Button Label
+    const copyBtnText = document.getElementById('copyInvoiceBtnText');
+    if (copyBtnText) {
+        copyBtnText.textContent = isProtected ? 'Copy Protected Client Note' : 'Copy Standard Client Note';
+    }
 }
 
 // ===================================================
 // Copy Actions & Toast
 // ===================================================
-function copyInvoiceText() {
-    const reqUSD = document.getElementById('revRequiredUSD').textContent;
-    const target = document.getElementById('revTargetDisplay').textContent;
+function copyInvoiceText(type) {
+    const isProt = type === 'protected';
+    const reqUSD = document.getElementById(isProt ? 'optProtectedUSD' : 'optStandardUSD')?.textContent || '0.00';
+    const targetText = lastReverseResults?.targetDisplay || document.getElementById('revTargetGoal')?.textContent || '';
 
-    const note = `Hi,\n\nTo ensure the exact net amount (${target}) is received after international PayPal processing fees (4.4% + $0.30 fixed fee, 18% GST, and currency conversion spread), the total invoice amount is ${reqUSD}.\n\nThank you!\n— MinimalFee™ by Minimal Creates`;
+    let note = '';
+    if (isProt) {
+        note = `Hi,\n\nTo ensure the full net project value (${targetText}) is received in our bank account after international PayPal processing fees (4.4% + $0.30 fixed fee, 18% GST), currency conversion spread, and the mandatory 24-hour interbank settlement clearing buffer, the total invoice amount is $${reqUSD}.\n\nThank you for understanding!\n— MinimalFee™ by Minimal Creates`;
+        showToast('🛡️ Market Protected client note copied!');
+    } else {
+        note = `Hi,\n\nTo cover standard international PayPal payment processing fees (4.4% + $0.30 fixed fee and 18% GST), the total invoice amount is $${reqUSD} (for net target ${targetText}).\n\nThank you!\n— MinimalFee™ by Minimal Creates`;
+        showToast('🤝 Standard client note copied!');
+    }
 
-    navigator.clipboard.writeText(note).then(() => {
-        showToast('Client invoice note copied!');
-    }).catch(() => {
-        fallbackCopy(note);
-    });
+    navigator.clipboard.writeText(note).catch(() => fallbackCopy(note));
+}
+
+function copyActiveInvoiceText() {
+    copyInvoiceText(selectedInvoiceOption);
 }
 
 function copyBreakdown(mode) {
@@ -507,24 +700,31 @@ function copyBreakdown(mode) {
                `• Credited to Bank: ${deposit}\n` +
                `• Total Deductions: ${loss}`;
     } else {
-        const invoiced = document.getElementById('revInvoicedGross').textContent;
-        const target = document.getElementById('revTargetGoal').textContent;
-        const fee = document.getElementById('revPaypalFee').textContent;
-        const gst = document.getElementById('revGST').textContent;
-        const netUSD = document.getElementById('revNetUSD').textContent;
-        const deposit = document.getElementById('revFinalBank').textContent;
+        const target = lastReverseResults?.targetDisplay || document.getElementById('revTargetGoal')?.textContent || '';
+        const protUSD = document.getElementById('optProtectedUSD')?.textContent || '0.00';
+        const protBank = document.getElementById('optProtectedDeposit')?.textContent || '0.00';
+        const stdUSD = document.getElementById('optStandardUSD')?.textContent || '0.00';
+        const stdBank = document.getElementById('optStandardDeposit')?.textContent || '0.00';
+        const selected = selectedInvoiceOption === 'protected' ? 'Market Protected + 24h Buffer' : 'Standard Client Terms';
+        const fee = document.getElementById('revPaypalFee')?.textContent || '';
+        const gst = document.getElementById('revGST')?.textContent || '';
+        const netUSD = document.getElementById('revNetUSD')?.textContent || '';
+        const deposit = document.getElementById('revFinalBank')?.textContent || '';
 
-        text = `PayPal Reverse Invoice Breakdown — MinimalFee™ by Minimal Creates:\n` +
-               `• Ask Client to Send: ${invoiced}\n` +
-               `• Target Net Amount: ${target}\n` +
+        text = `PayPal Reverse Invoice Comparison — MinimalFee™ by Minimal Creates:\n` +
+               `• Target Payout: ${target}\n` +
+               `• [Option 1 - Market Shield + 24h Buffer]: $${protUSD} (Guarantees ${protBank})\n` +
+               `• [Option 2 - Standard Client Rate]: $${stdUSD} (Deposits ${stdBank})\n` +
+               `--------------------------------------------------\n` +
+               `Active Option: ${selected}\n` +
                `• PayPal Fee: ${fee}\n` +
                `• Indian GST (18%): ${gst}\n` +
                `• Net USD: ${netUSD}\n` +
-               `• Deposited in Bank: ${deposit}`;
+               `• Bank Deposit: ${deposit}`;
     }
 
     navigator.clipboard.writeText(text).then(() => {
-        showToast('Breakdown copied to clipboard!');
+        showToast('Full breakdown copied to clipboard!');
     }).catch(() => {
         fallbackCopy(text);
     });

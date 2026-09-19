@@ -156,19 +156,36 @@
                         </div>
                     </div>
                     <div class="setting-item">
-                        <label for="customFxMarkup">PayPal Spread / Margin:</label>
+                        <label for="customFxMarkup">PayPal Spread / Margin: <small title="Logical median 3.80% applied automatically if empty">(Auto: 3.8%)</small></label>
                         <div class="input-with-affix">
-                            <input type="number" id="customFxMarkup" step="0.01" value="3.80" oninput="updateCustomRate('markup')">
+                            <input type="number" id="customFxMarkup" step="0.01" value="3.80" placeholder="3.80" oninput="updateCustomRate('markup')">
                             <span>%</span>
                         </div>
                     </div>
-                    <div class="setting-item full-width">
-                        <label for="customDirectEffectiveRate">Exact PayPal Conversion Rate (from statement/transaction):</label>
+                    <div class="setting-item">
+                        <label for="custom24hBuffer">24h Auto-Withdrawal Buffer: <small title="Overnight USD/INR volatility buffer during PayPal's mandatory 24h bank sweep">(India Hold)</small></label>
+                        <div class="input-with-affix">
+                            <input type="number" id="custom24hBuffer" step="0.05" value="0.85" placeholder="0.85" oninput="updateCustomRate('buffer')">
+                            <span>%</span>
+                        </div>
+                        <div class="buffer-preset-chips">
+                            <button type="button" class="buffer-chip" onclick="setBufferPreset(0.50)" title="Calm weekday interbank">0.5% (Calm)</button>
+                            <button type="button" class="buffer-chip active" id="chipBufferMoral" onclick="setBufferPreset(0.85)" title="Morally balanced 99% 24h cover">0.85% (Moral)</button>
+                            <button type="button" class="buffer-chip" onclick="setBufferPreset(1.25)" title="Weekend/holiday 72h bank hold">1.25% (Wknd)</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
+                        <label for="customDirectEffectiveRate">Exact Statement Rate (Optional):</label>
                         <div class="input-with-affix">
                             <span>₹</span>
-                            <input type="number" id="customDirectEffectiveRate" step="0.00000000000001" placeholder="e.g. 92.45278772876712" oninput="updateCustomRate('direct')">
+                            <input type="number" id="customDirectEffectiveRate" step="0.00000000000001" placeholder="e.g. 92.4527" oninput="updateCustomRate('direct')">
                         </div>
-                        <span class="rate-preview-text">Applied Effective Rate: <strong id="previewEffectiveRate">₹92.45/USD</strong></span>
+                    </div>
+                    <div class="setting-item full-width rate-preview-container">
+                        <div class="rate-preview-chips">
+                            <span class="rate-preview-text">Applied Base Rate: <strong id="previewEffectiveRate">₹92.45/USD</strong></span>
+                            <span class="rate-preview-text">24h Protected Rate: <strong id="previewProtectedRate">₹91.29/USD</strong></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -290,25 +307,107 @@
                     </div>
                 </div>
 
-                <!-- Reverse Mode Results -->
+                <!-- Reverse Mode Results: Dual Invoicing Options -->
                 <div class="results-card" id="reverseResults" style="display: none;">
-                    <div class="hero-result invoice-theme">
-                        <span class="hero-label">Ask Your Client To Send</span>
-                        <div class="hero-value text-accent" id="revRequiredUSD">$0.00</div>
-                        <div class="hero-subtext">
-                            <span>You Receive Net: <strong id="revTargetDisplay">₹0.00</strong></span>
-                            <span class="bullet">•</span>
-                            <span class="loss-badge" id="revFeeNotice">All fees covered</span>
+                    
+                    <!-- Section Header -->
+                    <div class="reverse-header-badge">
+                        <div class="rev-header-left">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <span>CHOOSE YOUR INVOICE STRATEGY</span>
+                        </div>
+                        <span class="rev-header-tag" id="revTargetNotice">Target: ₹0.00 in Bank</span>
+                    </div>
+
+                    <!-- Dual Options Comparison Grid -->
+                    <div class="invoice-options-grid">
+                        
+                        <!-- Option 1: Market Protected + 24h Buffer -->
+                        <div class="invoice-option-card protected-card selected" id="optCardProtected" onclick="selectInvoiceOption('protected')">
+                            <div class="opt-card-header">
+                                <div class="opt-badge opt-badge-protected">
+                                    <i class="fas fa-shield-alt"></i> 100% Guaranteed Payout
+                                </div>
+                                <div class="opt-radio-pill">
+                                    <span class="opt-radio-dot"></span>
+                                    <span class="opt-radio-label">Shield Active</span>
+                                </div>
+                            </div>
+                            <div class="opt-title">Market Parity + 24h Buffer</div>
+                            <div class="opt-amount-wrap">
+                                <span class="opt-currency">$</span>
+                                <span class="opt-amount" id="optProtectedUSD">0.00</span>
+                            </div>
+                            <p class="opt-desc">
+                                Matches real Google market rate + adds a <strong id="cardBufferText">0.85% buffer</strong> against overnight dips during PayPal's 24h bank sweep.
+                            </p>
+                            <div class="opt-meta">
+                                <div class="opt-meta-item">
+                                    <span class="meta-label">Bank Receives:</span>
+                                    <span class="meta-val highlight-green" id="optProtectedDeposit">₹0.00</span>
+                                </div>
+                                <div class="opt-meta-item">
+                                    <span class="meta-label">Protection Shield:</span>
+                                    <span class="meta-val" id="optProtectedBuffer">+$0.00</span>
+                                </div>
+                            </div>
+                            <button class="opt-copy-btn" onclick="event.stopPropagation(); copyInvoiceText('protected')">
+                                <i class="fas fa-comment-dollar"></i> Copy Protected Note
+                            </button>
+                        </div>
+
+                        <!-- Option 2: Standard Client-Friendly -->
+                        <div class="invoice-option-card standard-card" id="optCardStandard" onclick="selectInvoiceOption('standard')">
+                            <div class="opt-card-header">
+                                <div class="opt-badge opt-badge-standard">
+                                    <i class="fas fa-handshake"></i> Standard / Moral Rate
+                                </div>
+                                <div class="opt-radio-pill">
+                                    <span class="opt-radio-dot"></span>
+                                    <span class="opt-radio-label">Standard</span>
+                                </div>
+                            </div>
+                            <div class="opt-title">Standard PayPal Terms</div>
+                            <div class="opt-amount-wrap">
+                                <span class="opt-currency">$</span>
+                                <span class="opt-amount" id="optStandardUSD">0.00</span>
+                            </div>
+                            <p class="opt-desc">
+                                Covers official PayPal fee (4.4% + $0.30) & GST. Keeps PayPal spread intact without asking extra buffer from client.
+                            </p>
+                            <div class="opt-meta">
+                                <div class="opt-meta-item">
+                                    <span class="meta-label">Bank Receives:</span>
+                                    <span class="meta-val" id="optStandardDeposit">₹0.00</span>
+                                </div>
+                                <div class="opt-meta-item">
+                                    <span class="meta-label">Client Fee:</span>
+                                    <span class="meta-val" id="optStandardFee">+$0.00</span>
+                                </div>
+                            </div>
+                            <button class="opt-copy-btn outline" onclick="event.stopPropagation(); copyInvoiceText('standard')">
+                                <i class="fas fa-comment-dollar"></i> Copy Standard Note
+                            </button>
+                        </div>
+
+                    </div>
+
+                    <!-- Selected Option Summary Banner -->
+                    <div class="active-option-summary" id="activeOptionSummary">
+                        <div class="summary-icon"><i class="fas fa-info-circle"></i></div>
+                        <div class="summary-text" id="activeSummaryText">
+                            Showing detailed ledger for <strong>Market Shield Invoice ($0.00)</strong> — protects against PayPal spread & 24h bank delay.
                         </div>
                     </div>
 
-                    <div class="breakdown-list">
+                    <!-- Detailed Breakdown for Selected Option -->
+                    <div class="breakdown-list" id="revBreakdownList">
                         <div class="breakdown-item">
-                            <span class="item-name"><i class="fas fa-bullseye text-accent"></i> Target in Your Bank</span>
+                            <span class="item-name"><i class="fas fa-bullseye text-accent"></i> Target Net in Hand</span>
                             <span class="item-val bold" id="revTargetGoal">₹0.00</span>
                         </div>
                         <div class="breakdown-item">
-                            <span class="item-name"><i class="fas fa-file-invoice"></i> Invoiced Amount to Client</span>
+                            <span class="item-name"><i class="fas fa-file-invoice"></i> Invoiced Gross to Client</span>
                             <span class="item-val bold text-accent" id="revInvoicedGross">$0.00</span>
                         </div>
                         <div class="breakdown-divider"></div>
@@ -327,11 +426,15 @@
                         </div>
                         <div class="breakdown-divider"></div>
                         <div class="breakdown-item">
-                            <span class="item-name"><i class="fas fa-exchange-alt icon-muted"></i> PayPal FX Rate Used</span>
+                            <span class="item-name"><i class="fas fa-exchange-alt icon-muted"></i> Conversion Rate Applied</span>
                             <span class="item-val" id="revEffectiveRate">₹0.00</span>
                         </div>
+                        <div class="breakdown-item" id="revBufferRow">
+                            <span class="item-name"><i class="fas fa-clock icon-muted"></i> 24h Auto-Withdrawal Shield</span>
+                            <span class="item-val text-accent" id="revBufferApplied">0.85% buffer included</span>
+                        </div>
                         <div class="breakdown-item total-row">
-                            <span class="item-name"><i class="fas fa-check-circle text-green"></i> Final Deposited into Bank</span>
+                            <span class="item-name"><i class="fas fa-check-circle text-green"></i> Guaranteed Deposit into Bank</span>
                             <span class="item-val total-highlight" id="revFinalBank">₹0.00</span>
                         </div>
                         <div class="breakdown-item summary-row">
@@ -341,11 +444,11 @@
                     </div>
 
                     <div class="card-actions">
-                        <button class="action-btn primary" onclick="copyInvoiceText()">
-                            <i class="fas fa-comment-dollar"></i> <span id="copyInvoiceBtnText">Copy Client Note</span>
+                        <button class="action-btn primary" id="btnActiveCopyNote" onclick="copyActiveInvoiceText()">
+                            <i class="fas fa-comment-dollar"></i> <span id="copyInvoiceBtnText">Copy Selected Client Note</span>
                         </button>
                         <button class="action-btn" onclick="copyBreakdown('reverse')">
-                            <i class="far fa-copy"></i> <span id="copyRevBreakdownBtnText">Copy Details</span>
+                            <i class="far fa-copy"></i> <span id="copyRevBreakdownBtnText">Copy Full Breakdown</span>
                         </button>
                     </div>
                 </div>
@@ -355,15 +458,17 @@
             <!-- Collapsible Formula / Rules Guide -->
             <details class="rules-card">
                 <summary class="rules-summary">
-                    <span><i class="fas fa-info-circle"></i> PayPal India Fee Rules & Formula</span>
+                    <span><i class="fas fa-info-circle"></i> PayPal India Fee Rules, 24h Auto-Hold & Invoice Math</span>
                     <i class="fas fa-chevron-down arrow-icon"></i>
                 </summary>
                 <div class="rules-content">
                     <ul>
-                        <li><strong>Standard Fee:</strong> 4.40% + $0.30 USD per transaction.</li>
-                        <li><strong>GST (Goods & Services Tax):</strong> 18% charged on top of the PayPal fee.</li>
-                        <li><strong>Currency Conversion Margin:</strong> PayPal applies ~3.8% spread below mid-market Google rate.</li>
-                        <li><strong>Effective Formula:</strong> <code>Net USD = Amount × 0.94808 - $0.354</code>, then converted at <code>Market Rate × 0.962</code>.</li>
+                        <li><strong>Standard Transaction Fee:</strong> 4.40% + $0.30 USD per incoming international transaction.</li>
+                        <li><strong>Indian GST:</strong> 18.00% charged on top of PayPal's fee (effective total deduction = <code>Amount × 0.05192 + $0.354</code>).</li>
+                        <li><strong>PayPal FX Conversion Margin:</strong> Typically 3.50%–4.00% below Google mid-market rate. If left empty, a logical median of <strong>3.80%</strong> is automatically applied.</li>
+                        <li><strong>Indian 24h Auto-Withdrawal Hold:</strong> Under RBI regulations, PayPal India does not allow holding foreign currency wallets. Received USD is held up to 24 hours and automatically swept to your linked Indian bank. The conversion rate applied is determined at the exact time of auto-withdrawal.</li>
+                        <li><strong>Option 1 (Market Parity + 24h Buffer):</strong> Adds protection for PayPal's hidden currency spread plus a 1.25% overnight volatility buffer so you are guaranteed the full true market rupee value.</li>
+                        <li><strong>Option 2 (Standard Client Terms):</strong> Passes only the official 4.4% + $0.30 fee and GST to the client, leaving standard PayPal conversion intact to keep billing standard and client-friendly.</li>
                     </ul>
                 </div>
             </details>
