@@ -42,9 +42,8 @@ $$\text{Required Invoice USD} = \frac{\text{Net USD Needed} + 0.354}{0.94808}$$
 
 ## 🔒 Legal & Trademark Notice
 
-**PayCalc™** is an official product developed by **Minimal Creates**.  
-© 2024–2026 Minimal Creates™. All rights reserved.  
-*PayPal™ is a registered trademark of PayPal, Inc.*
+**MinimalFee™** is an official product developed by **Minimal Creates**.  
+© 2024–2026 Minimal Creates™. All rights reserved.
 
 ---
 
